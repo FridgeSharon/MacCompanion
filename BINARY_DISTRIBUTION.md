@@ -71,9 +71,19 @@ Solaar-derived/vendor HID++ backend must remain absent from the public build.
 
 ## Signing and release readiness
 
-The local signing inventory currently contains an **Apple Development** identity only;
-there is no usable **Developer ID Application** identity. The existing development app
-is arm64, version `0.1.0`, build `1`. It is not the public release artifact.
+The initial review found only an Apple Development identity. With the owner's approval,
+a **Developer ID Application** identity has now been created and installed in Keychain.
+The corrected Release candidate, version `0.1.0` / build `20261101.6`, contains both
+Apple Silicon and Intel code in the app and helper. Its licenses, credits, signing identity,
+hardened runtime, secure timestamps and absence of debugging entitlements were verified.
+Apple notarization was accepted on 2026-11-01. The owner published the
+[first prerelease](https://github.com/FridgeSharon/MacCompanion/releases/tag/v0.1.0-beta.20261101.6)
+on the same day. Its ZIP, checksum and build receipt are public. An anonymous download
+was verified against the exact notarized-build checksum. The release tag resolves to
+`9a7f4ededb0ccf1de103c8871aa75932468fb530`.
+
+See [RELEASING.md](RELEASING.md) for the reproducible release process and verification
+script. The existing development app is not used as the public release artifact.
 
 For a normal GitHub installation, use a Developer ID Application certificate, hardened
 runtime, a secure timestamp, and Apple notarization with the ticket stapled to the app.
@@ -99,6 +109,8 @@ Before publishing the actual artifact:
    separately from the private app. Installation on another Mac should be tested before
    describing the download as stable. Mark an initial release as a prerelease until then.
 
-Source compilation previously passed 133 tests. That is not evidence of a notarized
-download or a fresh installation. The private installed app and its settings are separate
-and have not been changed for this review.
+The lean source passed 141 signed tests, including fixed-window tab visibility and
+content-boundary checks. See VALIDATION.md for owner-reported physical checks and their
+limits. A local build with the existing private identity was installed separately,
+preserving the original app, preferences and signing requirement for rollback. It is
+not the public Developer ID download artifact.

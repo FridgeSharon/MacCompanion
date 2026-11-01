@@ -1,26 +1,43 @@
-# Public snapshot validation
+# Public build validation
 
 Validated 2026-11-01 on macOS 27 with the installed Xcode macOS SDK.
 
-- Application build: succeeded in an isolated build directory.
-- `scripts/build.sh check`: application and test target compiled successfully without
-  signing or launching unsigned code.
-- `scripts/build.sh test`: **133 tests, 0 failures** using a locally configured signing
-  identity. No signing identity or certificate is distributed in this repository.
-- Tests cover gesture recognition/continuous phases, layout geometry, native preference
-  recovery, window-history churn, scroll filtering/phases, idle display-link recovery,
-  settings migration and preserving a native thumb binding without vendor discovery.
-- `scripts/audit_export.py`: required licenses/notices present, excluded backend absent,
-  matching runtime license copies, and source/export privacy gates passed.
-- Shell/Python build helpers parsed successfully; Xcode project syntax validated.
+- The lean application and its test target compile successfully.
+- `scripts/build.sh test`: **141 tests, 0 failures**, using an Apple Development-signed
+  test host with global app startup and input handlers disabled under XCTest.
+- A real AppKit Preferences-window regression test cycles all seven tabs, requires
+  all seven toolbar items to remain visible, and checks that the window frame stays
+  unchanged. It also checks that non-scrolling labels and controls stay inside each
+  pane. The final run reports no conflicting constraints or invalid storyboard
+  tab relationships for this check.
+- Gesture, layout, native preference recovery, scroll filtering/phases, idle
+  display-link recovery and settings-migration checks remain covered. Eight focused
+  trackpad tests cover tap rejection, source-device matching and balanced click release.
+- The owner tested the Developer ID-signed lean build with physical devices and
+  reported working three-finger tap, physical click/hold/drag, ordinary mouse clicks,
+  mouse scrolling/inversion, four thumb gestures and title-bar Fill/Restore.
+  This is owner-reported acceptance; browser counter telemetry was not independently
+  verified. The subsequent Preferences-only fix has its own automated window check.
+- A post-workload spot check of that lean build returned to 0.4% CPU. A five-second
+  sample showed a 65.1 MB physical footprint and a waiting main event loop. This is
+  a brief resource check, not a new comprehensive leak audit.
+- `scripts/audit_export.py`: licenses/notices present, excluded backend absent,
+  matching runtime license copies and source/export privacy gates passed.
+- The universal app and helper pass Developer ID, hardened-runtime, secure-timestamp,
+  entitlement and mutual XPC identity checks. No signing credentials are distributed.
+- The owner published build `20261101.6` as a GitHub prerelease. Its source tag and
+  three release assets match the approved candidate. An anonymous ZIP download matches
+  SHA-256 `35b273193b91c74deafd6253062fb36e96477b19ed909e67c3e5d90099d1ed7d`.
 
-This is the public **native-input source variant**. It excludes the vendor-specific HID++
-backend and its tests; the private fork's larger test count is not claimed for this tree.
-The public app was not installed over the original private app, and its bundle identifier
-is separate. The installed private executable was checksum-verified unchanged after
-validation and was restarted.
+The public app has a separate bundle identifier and has not overwritten the private
+installation. The original private app and its settings are retained for rollback. A locally signed
+build of the same corrected source was then installed using the existing private app
+identity and signing requirement; its Middle Click and AWDL panes were visually checked.
+Existing continuous-gesture/direct-sizing choices and AWDL automatic mode were preserved. The public
+AWDL helper remains disabled during this validation; its installation, approval and
+live network policy are not established by the private helper's earlier checks.
 
-This test run does not establish physical acceptance of every public-build mouse,
-display arrangement, macOS version, Wi-Fi/game combination or helper installation.
-Continuous private-API gestures remain experimental. No public compiled release,
-installer, notarization, updater or App Store submission is part of this publication.
+Physical acceptance on Intel, other macOS versions, other trackpads and every display
+or Wi-Fi/game configuration remains unverified. Continuous gestures and trackpad touch
+interfaces use private APIs and remain experimental. No automatic updater or App Store
+submission is configured. Screenshots and GIF demos are deferred at the owner's request.

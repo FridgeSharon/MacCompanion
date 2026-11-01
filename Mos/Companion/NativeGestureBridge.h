@@ -10,3 +10,5 @@ NSInteger MCSpaceCountForDisplay(NSString *displayUUID);
 BOOL MCPhysicalMouseButtonDown(int button);
 
 NSDictionary *MCCopyDockSwipeSummary(CGEventRef event); // diagnostics only; never posts
+
+#import "TrackpadTouchBridge.h"

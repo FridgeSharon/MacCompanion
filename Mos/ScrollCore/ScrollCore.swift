@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class ScrollCore: ScrollActionPort {
+class ScrollCore {
 
     // 单例
     static let shared = ScrollCore()
@@ -27,9 +27,6 @@ class ScrollCore: ScrollActionPort {
     var dashKeyHeld = false
     var toggleKeyHeld = false
     var blockKeyHeld = false
-    private var mosDashActionCount = 0
-    private var mosToggleActionCount = 0
-    private var mosBlockActionCount = 0
     // 例外应用数据
     var application: Application?
     var currentApplication: Application? // 用于区分按下热键及抬起时的作用目标
@@ -71,11 +68,6 @@ class ScrollCore: ScrollActionPort {
         let scrollEvent = ScrollEvent(with: event)
         let hasVerticalDelta = scrollEvent.Y.valid && scrollEvent.Y.usableValue != 0.0
         let hasHorizontalDelta = scrollEvent.X.valid && scrollEvent.X.usableValue != 0.0
-        if hasVerticalDelta || hasHorizontalDelta {
-            // 只有真实滚动才会取消 tap replay, 同时触发丢失 mouseUp 的轻量兜底释放。
-            InputProcessor.shared.markMosScrollActionSessionsUsedForScroll()
-            InputProcessor.shared.releaseMosScrollMouseSessionsIfPhysicalButtonsAreUp()
-        }
         // 不处理触控板
         // 无法区分黑苹果, 因为黑苹果的触控板驱动直接模拟鼠标输入
         // 无法区分 Magic Mouse, 因为其滚动特征与内置的 Trackpad 一致
@@ -202,39 +194,21 @@ class ScrollCore: ScrollActionPort {
     private var hidToggleHeldCode: UInt16?
     private var hidBlockHeldCode: UInt16?
 
-    func handleMosScrollAction(role: ScrollRole, isDown: Bool) {
-        assertMainThread()
-        switch role {
-        case .dash:
-            mosDashActionCount = updatedActionCount(mosDashActionCount, isDown: isDown)
-            refreshDashState()
-        case .toggle:
-            mosToggleActionCount = updatedActionCount(mosToggleActionCount, isDown: isDown)
-            refreshToggleState()
-        case .block:
-            mosBlockActionCount = updatedActionCount(mosBlockActionCount, isDown: isDown)
-            refreshBlockState()
-        }
-    }
 
-    private func updatedActionCount(_ count: Int, isDown: Bool) -> Int {
-        if isDown {
-            return count + 1
-        }
-        return max(0, count - 1)
-    }
+
+
 
     private func refreshDashState() {
-        dashScroll = dashKeyHeld || mosDashActionCount > 0
+        dashScroll = dashKeyHeld
         dashAmplification = dashScroll ? 5.0 : 1.0
     }
 
     private func refreshToggleState() {
-        toggleScroll = toggleKeyHeld || mosToggleActionCount > 0
+        toggleScroll = toggleKeyHeld
     }
 
     private func refreshBlockState() {
-        blockSmooth = blockKeyHeld || mosBlockActionCount > 0
+        blockSmooth = blockKeyHeld
     }
 
     /// 处理来自 Logitech HID++ 的按键事件, 匹配 dash/toggle/block 滚动热键
@@ -302,13 +276,6 @@ class ScrollCore: ScrollActionPort {
         if event.getIntegerValueField(.eventSourceUserData) == MosEventMarker.syntheticCustom {
             return nil  // listenOnly tap 返回值无影响
         }
-        if type == .keyDown || type == .flagsChanged || type == .otherMouseDown,
-           ScrollCore.shared.shouldDeferToMosScrollButtonBinding(event) {
-            // Mos Scroll 动作由 ButtonCore/InputProcessor 接管。若同一触发器也被旧滚动
-            // 热键配置使用, listenOnly tap 不能再创建第二份 held 状态。
-            return nil
-        }
-
         let keyCode = event.keyCode
         let mouseButton = UInt16(event.getIntegerValueField(.mouseEventButtonNumber))
 
@@ -380,13 +347,7 @@ class ScrollCore: ScrollActionPort {
         return nil
     }
 
-    private func shouldDeferToMosScrollButtonBinding(_ event: CGEvent) -> Bool {
-        let inputEvent = InputEvent(fromCGEvent: event)
-        return ButtonUtils.shared.getBestMatchingBinding(
-            for: inputEvent,
-            where: { ShortcutExecutor.isMosScrollActionIdentifier($0.systemShortcutName) }
-        ) != nil
-    }
+
     
     // MARK: - 鼠标事件处理
     let mouseLeftEventCallBack: CGEventTapCallBack = { (proxy, type, event, refcon) in

@@ -17,7 +17,7 @@ keeps the ordinary Mos mouse/keyboard UI working without that backend.
 | [Mac Mouse Fix](https://github.com/noah-nuebling/mac-mouse-fix) | Noah Nuebling, copyright 2019–2023 in the referenced license. Native gesture protocol/bridge and continuous scaling adapted from revision `2dae68a01ebcb4c645161160a7872a60ecf58ace`, particularly TouchSimulator.m. Relevant files: `Mos/Companion/NativeGestureBridge.*`, `ContinuousGestures.swift`. | [Custom MMF License](LICENSES/MacMouseFix.txt) |
 | [Rectangle](https://github.com/rxhanson/Rectangle) | Ryan Hanson, copyright 2019–2026; based on Spectacle by Eric Czarny, copyright 2017. Window/Stage Manager behavior reference and adapted Enhanced UI frame transaction in `WindowAccessibility.swift`. | [MIT, including Spectacle credit](LICENSES/Rectangle-MIT.txt) |
 | [AWDLControl](https://github.com/james-howard/AWDLControl) | James Howard, copyright 2026. AWDL policy and helper/XPC architecture adapted in `AWDLController.swift`, `AWDLPreferencesViewController.swift` and `AWDLHelper/main.m`. | [MIT](LICENSES/AWDLControl-MIT.txt) |
-| [Charts / DGCharts](https://github.com/ChartsOrg/Charts) | Daniel Cohen Gindi and Philipp Jahoda, copyright 2016–2019 in the pinned license. Package 5.1.0, revision `dd9c72e3d7e751e769971092a6bd72d39198ae63`. The older danielgindi/Charts URL redirects to ChartsOrg. | [Apache-2.0](LICENSES/Charts-Apache-2.0.txt) |
+| [Charts / DGCharts](https://github.com/ChartsOrg/Charts) | Daniel Cohen Gindi and Philipp Jahoda, copyright 2016–2019 in the pinned license. Used by the event monitor in earlier builds; removed from the lean build, with the historical notice retained. Package 5.1.0, revision `dd9c72e3d7e751e769971092a6bd72d39198ae63`. The older danielgindi/Charts URL redirects to ChartsOrg. | [Apache-2.0](LICENSES/Charts-Apache-2.0.txt) |
 | [LoginServiceKit](https://github.com/Clipy/LoginServiceKit) | Clipy Project, copyright 2015–2020. Package 2.4.0, revision `5af9098805ff603830aec65754071c6514bbcacd`. | [Apache-2.0](LICENSES/LoginServiceKit-Apache-2.0.txt) |
 
 Mos also acknowledges [Smoothscroll for websites](https://github.com/galambalazs/smoothscroll-for-websites),
@@ -30,3 +30,5 @@ Apple platform symbols and other marks remain the property of their respective o
 and are not relicensed as our own artwork. The source is intended for macOS/Apple-platform
 application development, not redistribution of those resources as a separate asset pack.
 No upstream author, Apple or Logitech endorsement is implied.
+
+Trackpad middle-click is an independent Mac Companion implementation. [Middle by Ryan Hanson](https://github.com/rxhanson/Middle-Community) is a behavioral reference; no Middle source, assets, localization or binary is included. The new app icon was generated for Mac Companion with OpenAI imagegen and replaces the inherited Mos artwork.
