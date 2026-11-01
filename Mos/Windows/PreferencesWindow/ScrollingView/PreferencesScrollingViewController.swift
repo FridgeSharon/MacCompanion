@@ -256,10 +256,8 @@ extension PreferencesScrollingViewController {
             resetToDefaultsButton.animator().alphaValue = shouldShowResetButton ? 1.0 : 0.0
             resetButtonHeightConstraint?.animator().constant = shouldShowResetButton ? 24 : 0
         }, completionHandler: {
-            // 触发父视图窗口尺寸更新
+            // Relayout the form inside the fixed preferences window.
             self.view.needsLayout = true
-            self.view.layout()
-            (self.parent as? PreferencesTabViewController)?.updateWindowSize()
         })
     }
 

@@ -15394,6 +15394,193 @@
           }
         }
       }
+    },
+    "Trackpad middle-click is off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad middle-click is off"
+          }
+        }
+      }
+    },
+    "Accessibility approval is required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility approval is required"
+          }
+        }
+      }
+    },
+    "No supported trackpad was found. Reconnect it and toggle this feature again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No supported trackpad was found. Reconnect it and toggle this feature again."
+          }
+        }
+      }
+    },
+    "Trackpad middle-click could not start": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad middle-click could not start"
+          }
+        }
+      }
+    },
+    "Tap is paused: macOS assigns three-finger tap to Look Up. Change that in Trackpad settings, then toggle this feature.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap is paused: macOS assigns three-finger tap to Look Up. Change that in Trackpad settings, then toggle this feature."
+          }
+        }
+      }
+    },
+    "Physical click is paused while macOS three-finger drag is enabled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Physical click is paused while macOS three-finger drag is enabled."
+          }
+        }
+      }
+    },
+    "Trackpad middle-click is ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad middle-click is ready"
+          }
+        }
+      }
+    },
+    "Based on Mos by Caldis and contributors. Includes adaptations from Mac Mouse Fix, Rectangle/Spectacle and AWDLControl, and uses LoginServiceKit. Free for noncommercial use under the included licenses.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Based on Mos by Caldis and contributors. Includes adaptations from Mac Mouse Fix, Rectangle/Spectacle and AWDLControl, and uses LoginServiceKit. Free for noncommercial use under the included licenses."
+          }
+        }
+      }
+    },
+    "Credits and licenses…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credits and licenses…"
+          }
+        }
+      }
+    },
+    "Enable trackpad middle-click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable trackpad middle-click"
+          }
+        }
+      }
+    },
+    "Three-finger tap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three-finger tap"
+          }
+        }
+      }
+    },
+    "Three-finger physical click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three-finger physical click"
+          }
+        }
+      }
+    },
+    "Trackpad middle-click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad middle-click"
+          }
+        }
+      }
+    },
+    "Trackpad middle-click status": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad middle-click status"
+          }
+        }
+      }
+    },
+    "Tap opens a middle click. Physical click holds the middle button until release and supports dragging. Existing mouse buttons keep their normal behavior.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap opens a middle click. Physical click holds the middle button until release and supports dragging. Existing mouse buttons keep their normal behavior."
+          }
+        }
+      }
+    },
+    "Trackpad settings…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trackpad settings…"
+          }
+        }
+      }
+    },
+    "Experimental: uses macOS touch interfaces. Native three-finger Look Up or three-finger drag can conflict; these system settings are never changed automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental: uses macOS touch interfaces. Native three-finger Look Up or three-finger drag can conflict; these system settings are never changed automatically."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

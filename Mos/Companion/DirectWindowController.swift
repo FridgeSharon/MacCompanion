@@ -196,6 +196,7 @@ final class DirectWindowController {
                     DirectWindowController.shared.capturedClick = nil
                     return Unmanaged.passUnretained(event)
                 }
+                if TrackpadMiddleController.shared.handlesPhysicalClick(event) { return Unmanaged.passUnretained(event) }
                 return DirectWindowController.shared.capturePrimary(type: type, event: event) ? nil : Unmanaged.passUnretained(event)
             }, listenOn: .cgSessionEventTap, placeAt: .headInsertEventTap, for: .defaultTap)
             primaryInterceptor?.onRestart = { [weak self] in

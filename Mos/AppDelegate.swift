@@ -126,8 +126,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DirectWindowController.shared.recoverNativeSettings()
         ContinuousGestureEmitter.shared.start()
         AWDLController.shared.start()
-        ShortcutExecutor.shared.scrollActionPort = ScrollCore.shared
-        ShortcutExecutor.shared.modifierFlagsProvider = InputProcessor.shared
         startWithAccessibilityPermissionsChecker(nil)
     }
 
@@ -147,9 +145,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DirectWindowController.shared.stop()
         StageManagerGuardian.shared.stop()
         AWDLController.shared.stop()
-        LogiCenter.shared.stop()
         ScrollCore.shared.disable()
-        ButtonCore.shared.disable()
+        ThumbButtonMonitor.shared.disable()
+        TrackpadMiddleController.shared.stop()
         // 写入尚未 flush 的脏配置组
         Options.shared.flushPendingSaves()
     }
@@ -164,19 +162,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 permissionRecoveryTimer = nil
                 NSLog("First Initialization (Accessibility Authorization Needed)")
                 ScrollCore.shared.enable()
-                ButtonCore.shared.enable()
-                LogiCenter.shared.start()
+                ThumbButtonMonitor.shared.enable()
                 DirectWindowController.shared.start()
                 StageManagerGuardian.shared.start()
+                TrackpadMiddleController.shared.start()
             }
         } else {
             if Utils.isHadAccessibilityPermissions() {
                 NSLog("Regular Initialization")
                 ScrollCore.shared.enable()
-                ButtonCore.shared.enable()
-                LogiCenter.shared.start()
+                ThumbButtonMonitor.shared.enable()
                 DirectWindowController.shared.start()
                 StageManagerGuardian.shared.start()
+                TrackpadMiddleController.shared.start()
             } else {
                 // 如果应用不在辅助权限列表内, 则弹出欢迎窗口
                 WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.introductionWindowController, withTitle: "")
@@ -203,25 +201,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         StageManagerGuardian.shared.stop()
         permissionRecoveryTimer?.invalidate()
         permissionRecoveryTimer = nil
-        LogiCenter.shared.stop()
         ScrollCore.shared.disable()
-        ButtonCore.shared.disable()
+        ThumbButtonMonitor.shared.disable()
+        TrackpadMiddleController.shared.stop()
     }
     // 辅助功能权限在运行时被撤销 (可能由多个 Interceptor 同时触发, 此方法必须幂等)
     @objc func handleAccessibilityPermissionLost() {
         DirectWindowController.shared.stop()
         StageManagerGuardian.shared.stop()
         // 避免多个 Interceptor 同时触发导致重复处理
-        guard ScrollCore.shared.isActive || ButtonCore.shared.isActive else { return }
+        guard ScrollCore.shared.isActive || ThumbButtonMonitor.shared.isActive else { return }
         NSLog("Accessibility permission lost at runtime, disabling cores")
-        LogiCenter.shared.stop()
         ScrollCore.shared.disable()
-        ButtonCore.shared.disable()
-        Toast.show(
-            NSLocalizedString("Accessibility permission lost, Mos has been paused", comment: ""),
-            style: .warning,
-            duration: 5.0
-        )
+        ThumbButtonMonitor.shared.disable()
+        TrackpadMiddleController.shared.stop()
+        WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.introductionWindowController, withTitle: "")
         // 启动定时器检测权限恢复
         permissionRecoveryTimer?.invalidate()
         permissionRecoveryTimer = Timer.scheduledTimer(

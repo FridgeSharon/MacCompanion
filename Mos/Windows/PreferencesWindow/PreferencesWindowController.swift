@@ -14,15 +14,14 @@ class PreferencesWindowController: NSWindowController, NSWindowDelegate {
     
     override func windowDidLoad() {
         super.windowDidLoad()
-        // 插入分隔符
-        if #available(OSX 10.16, *) {
-            window?.toolbar?.insertItem(withItemIdentifier: NSToolbarItem.Identifier.flexibleSpace, at: 4)
-            window?.toolbar?.insertItem(withItemIdentifier: NSToolbarItem.Identifier.flexibleSpace, at: 3)
-            window?.toolbar?.insertItem(withItemIdentifier: NSToolbarItem.Identifier.flexibleSpace, at: 2)
-            window?.toolbar?.insertItem(withItemIdentifier: NSToolbarItem.Identifier.flexibleSpace, at: 1)
-        } else {
-            window?.toolbar?.insertItem(withItemIdentifier: NSToolbarItem.Identifier.flexibleSpace, at: 3)
-        }
+        guard let window else { return }
+        window.toolbarStyle = .preference
+        window.toolbar?.displayMode = .iconAndLabel
+        window.toolbar?.allowsUserCustomization = false
+        window.toolbar?.autosavesConfiguration = false
+        window.contentMinSize = PreferencesTabViewController.contentSize
+        window.contentMaxSize = PreferencesTabViewController.contentSize
+        window.setContentSize(PreferencesTabViewController.contentSize)
     }
     
     func windowWillClose(_ notification: Notification) {
