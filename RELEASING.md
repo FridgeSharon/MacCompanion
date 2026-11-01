@@ -46,7 +46,8 @@ private installation to test archive creation.
 
 Run `scripts/verify_release.py APP_PATH --team "$COMPANION_TEAM" --before-notarization`
 against the exported app. This checks licenses, MMF attribution, both architectures,
-app/helper identity, hardened runtime, timestamps and absence of debugging entitlements.
+app/helper identity, matching embedded XPC peer requirements, hardened runtime,
+timestamps and absence of debugging entitlements.
 
 Create a submission ZIP with `ditto -c -k --keepParent APP_PATH SUBMISSION.zip`, then
 submit with `asc --profile YOUR_PROFILE notarization submit --file SUBMISSION.zip`.

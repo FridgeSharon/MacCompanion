@@ -65,6 +65,12 @@ def verify(app, team, before_notarization=False):
     for code in [executable, helper]:
         if set(run('/usr/bin/lipo', '-archs', str(code)).stdout.split()) != {'arm64', 'x86_64'}:
             raise ValueError('Expected both Apple Silicon and Intel architectures: ' + code.name)
+    for code, peer in [(executable, APP_ID + '.AWDLHelper'), (helper, APP_ID)]:
+        strings = run('/usr/bin/strings', '-a', str(code)).stdout
+        requirement = (f'anchor apple generic and identifier "{peer}" '
+                       f'and certificate leaf[subject.OU] = "{team}"')
+        if requirement not in strings or 'YOUR_TEAM_ID' in strings:
+            raise ValueError('Incorrect embedded XPC peer requirement: ' + code.name)
     if not before_notarization:
         run('/usr/bin/xcrun', 'stapler', 'validate', str(app))
         run('/usr/sbin/spctl', '--assess', '--type', 'execute', '--verbose=4', str(app))
