@@ -1,5 +1,8 @@
 # Public build validation
 
+The subsequent hardening pass and its separate local build are documented in
+[QUALITY.md](QUALITY.md). The results below describe the published beta candidate.
+
 Validated 2026-11-01 on macOS 27 with the installed Xcode macOS SDK.
 
 - The lean application and its test target compile successfully.

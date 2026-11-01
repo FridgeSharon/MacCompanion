@@ -19,11 +19,6 @@ class ScrollSmoothDetailSettingsPopoverViewController: AdaptivePopover, ScrollOp
         syncViewWithOptions()
     }
 
-    override func viewDidLayout() {
-        super.viewDidLayout()
-        updatePreferredContentSize()
-    }
-
     @IBAction func verticalSmoothToggle(_ sender: NSButton) {
         getTargetApplicationScrollOptions().smoothVertical = sender.state == .on
         syncViewWithOptions()

@@ -100,8 +100,15 @@ final class CompanionSettings {
     static let key = "companionConfigurationV1"
     static let changed = Notification.Name("CompanionConfigurationChanged")
     private(set) var configuration: CompanionConfiguration
+    private let defaults: UserDefaults
+    private let persistsChanges: Bool
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults? = nil) {
+        self.defaults = defaults ?? .standard
+        // Tests may explicitly provide an isolated suite. The implicit shared
+        // instance must still leave the real user's preferences untouched.
+        persistsChanges = defaults != nil || !AppRuntime.isRunningXCTest
+        let defaults = self.defaults
         if let data = defaults.data(forKey: Self.key), let saved = try? JSONDecoder().decode(CompanionConfiguration.self, from: data) {
             configuration = saved
         } else {
@@ -123,8 +130,8 @@ final class CompanionSettings {
     func update(_ body: (inout CompanionConfiguration) -> Void) {
         body(&configuration)
         configuration.validate()
-        if !AppRuntime.isRunningXCTest, let data = try? JSONEncoder().encode(configuration) {
-            UserDefaults.standard.set(data, forKey: Self.key)
+        if persistsChanges, let data = try? JSONEncoder().encode(configuration) {
+            defaults.set(data, forKey: Self.key)
         }
         CompanionGestureController.shared.cancel()
         NotificationCenter.default.post(name: Self.changed, object: nil)

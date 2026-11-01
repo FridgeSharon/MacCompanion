@@ -100,6 +100,7 @@ extension Interceptor {
         // 启动拦截层
         CGEvent.tapEnable(tap: tap, enable: true)
         // 启动守护
+        keeper?.invalidate()
         keeper = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             // 权限被撤销时, 主动停止 tap 并通知, 不等 restart 判断

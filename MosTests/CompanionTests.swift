@@ -408,6 +408,42 @@ final class NativeWindowLeaseTests: XCTestCase {
             XCTAssertFalse(lease.owned); XCTAssertFalse(lease.acquire()); XCTAssertFalse(lease.restore())
         }
     }
+    func testMissingOrDuplicateJournalEntriesCannotClearRecoveryData() throws {
+        try withLease { lease, store, defaults in
+            let entries = NativeWindowPreference.controls.map { NativeWindowSettingsLease.Entry(preference: $0, previous: nil) }
+            let previous = store.values
+            for invalid in [[], Array(entries.dropLast()), entries + [entries[0]]] {
+                let data = try JSONEncoder().encode(invalid)
+                defaults.set(data, forKey: NativeWindowSettingsLease.journalKey)
+                XCTAssertFalse(lease.restore())
+                XCTAssertEqual(defaults.data(forKey: NativeWindowSettingsLease.journalKey), data)
+                XCTAssertEqual(store.values, previous)
+            }
+        }
+    }
+    func testJournalCannotRestoreAnUnrecognizedPreference() throws {
+        try withLease { lease, store, defaults in
+            var entries = NativeWindowPreference.controls.map { NativeWindowSettingsLease.Entry(preference: $0, previous: nil) }
+            let foreign = NativeWindowPreference(domain: "unrelated.domain", key: "OutsideKey", owned: .string("None"))
+            entries[0] = .init(preference: foreign, previous: .string("Changed"))
+            store.values[foreign.key] = foreign.owned
+            let previous = store.values
+            defaults.set(try JSONEncoder().encode(entries), forKey: NativeWindowSettingsLease.journalKey)
+            XCTAssertFalse(lease.owned); XCTAssertFalse(lease.acquire()); XCTAssertFalse(lease.restore())
+            XCTAssertTrue(lease.hasJournal); XCTAssertEqual(store.values, previous)
+        }
+    }
+    func testJournalWithWrongValueTypeCannotWriteSystemPreferences() throws {
+        try withLease { lease, store, defaults in
+            var entries = NativeWindowPreference.controls.map { NativeWindowSettingsLease.Entry(preference: $0, previous: nil) }
+            entries[0] = .init(preference: entries[0].preference, previous: .boolean(true))
+            store.values[entries[0].preference.key] = entries[0].preference.owned
+            let previous = store.values
+            defaults.set(try JSONEncoder().encode(entries), forKey: NativeWindowSettingsLease.journalKey)
+            XCTAssertFalse(lease.owned); XCTAssertFalse(lease.restore())
+            XCTAssertTrue(lease.hasJournal); XCTAssertEqual(store.values, previous)
+        }
+    }
 }
 
 final class CompanionControlStateTests: XCTestCase {
@@ -717,5 +753,81 @@ final class TrackpadMiddleClickTests: XCTestCase {
         var session = TrackpadMiddleSession()
         XCTAssertTrue(session.begin(device: 10, threeFingers: true))
         XCTAssertTrue(session.cancel()); XCTAssertFalse(session.cancel())
+    }
+}
+
+private final class PopoverLayoutProbe: NSView {
+    var layoutCalls = 0
+    override func layout() { layoutCalls += 1; super.layout() }
+}
+private final class PopoverContentProbe: NSView {
+    override var intrinsicContentSize: NSSize { NSSize(width: 200, height: 40) }
+}
+
+final class QualityRegressionTests: XCTestCase {
+    func testAutomaticAWDLRestoresWhileAsleepOrInAnotherUserSession() {
+        var session = AWDLSessionState()
+        XCTAssertTrue(session.allowsAutomaticSuppression)
+        session.receive(NSWorkspace.willSleepNotification)
+        XCTAssertFalse(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.allowsAutomaticSuppression))
+        session.receive(NSWorkspace.sessionDidResignActiveNotification)
+        session.receive(NSWorkspace.didWakeNotification)
+        XCTAssertFalse(session.allowsAutomaticSuppression)
+        session.receive(NSWorkspace.sessionDidBecomeActiveNotification)
+        XCTAssertTrue(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.allowsAutomaticSuppression))
+        XCTAssertFalse(AWDLMode.on.suppress(onWiFi: true, gameActive: true, sessionActive: false))
+        XCTAssertTrue(AWDLMode.off.suppress(onWiFi: false, gameActive: false, sessionActive: false))
+    }
+    func testSessionActivationCannotResumeAutomaticAWDLBeforeWake() {
+        var session = AWDLSessionState()
+        session.receive(NSWorkspace.willSleepNotification)
+        session.receive(NSWorkspace.sessionDidBecomeActiveNotification)
+        XCTAssertFalse(session.allowsAutomaticSuppression)
+        session.receive(NSWorkspace.didWakeNotification)
+        XCTAssertTrue(session.allowsAutomaticSuppression)
+    }
+    func testExplicitSettingsStoreRoundTripsWithoutWritingStandardDefaults() {
+        let suite = "com.github.FridgeSharon.MacCompanion.qualityTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let previous = UserDefaults.standard.data(forKey: CompanionSettings.key)
+        let settings = CompanionSettings(defaults: defaults)
+        settings.update { $0.gestureThreshold = 71; $0.stageWidth = 203 }
+        let restored = CompanionSettings(defaults: defaults)
+        XCTAssertEqual(restored.configuration.gestureThreshold, 71)
+        XCTAssertEqual(restored.configuration.stageWidth, 203)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: CompanionSettings.key), previous)
+    }
+    func testStalledWindowLookupsDoNotAccumulateInputWork() {
+        let queue = DispatchQueue(label: "qualityTests.window-work")
+        let work = BoundedWindowWork(queue: queue)
+        let started = expectation(description: "AX lookup started")
+        let completed = expectation(description: "AX lookup completed")
+        let release = DispatchSemaphore(value: 0)
+        XCTAssertTrue(work.submit { started.fulfill(); release.wait(); completed.fulfill() })
+        wait(for: [started], timeout: 2)
+        for _ in 0..<10_000 {
+            XCTAssertFalse(work.submit { XCTFail("An extra lookup was retained while the lane was busy") })
+        }
+        release.signal()
+        wait(for: [completed], timeout: 2)
+        queue.sync {} // Completion also releases the lane before the next submission.
+        let resumed = expectation(description: "Next input is accepted")
+        XCTAssertTrue(work.submit { resumed.fulfill() })
+        wait(for: [resumed], timeout: 2)
+    }
+    func testPopoverSizingDoesNotReenterLayout() {
+        let popover = AdaptivePopover()
+        let root = PopoverLayoutProbe(frame: NSRect(x: 0, y: 0, width: 250, height: 80))
+        root.addSubview(PopoverContentProbe())
+        popover.view = root
+        popover.viewDidLayout()
+        XCTAssertEqual(root.layoutCalls, 0)
+        XCTAssertEqual(popover.preferredContentSize, NSSize(width: 224, height: 60))
+    }
+    func testAnEmptyPopoverDoesNotCrash() {
+        let popover = AdaptivePopover(); popover.view = NSView()
+        popover.updatePreferredContentSize()
+        XCTAssertEqual(popover.preferredContentSize, .zero)
     }
 }
