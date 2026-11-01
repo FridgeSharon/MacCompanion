@@ -103,10 +103,17 @@ results as acceptance of every public configuration.
 
 ## Credits
 
-Mos — Caldis and contributors; Mac Mouse Fix — Noah Nuebling; Rectangle — Ryan Hanson
-and Spectacle/Eric Czarny; AWDLControl — James Howard; Charts — Daniel Cohen Gindi and
-Philipp Jahoda; LoginServiceKit — Clipy Project. Mac Companion integration and public
-source preparation — Guy Sharon.
+| Project | Original authors | Contribution |
+| --- | --- | --- |
+| [Mos](https://github.com/Caldis/Mos) | Caldis and contributors | Scrolling engine and application foundation |
+| [Mac Mouse Fix](https://github.com/noah-nuebling/mac-mouse-fix) | Noah Nuebling | Native gesture protocol and continuous gesture adaptations |
+| [Rectangle](https://github.com/rxhanson/Rectangle) | Ryan Hanson | Window behavior references and frame transactions |
+| [Spectacle](https://github.com/eczarny/spectacle) | Eric Czarny | Earlier work credited by Rectangle |
+| [AWDLControl](https://github.com/james-howard/AWDLControl) | James Howard | AWDL policy and helper architecture |
+| [Charts](https://github.com/ChartsOrg/Charts) | Daniel Cohen Gindi and Philipp Jahoda | Event-monitor dependency in the original source snapshot |
+| [LoginServiceKit](https://github.com/Clipy/LoginServiceKit) | Clipy Project | Launch-at-login support |
+
+Mac Companion integration and original additions — Guy Sharon.
 
 Full scope, license texts and modification notices are linked in [CREDITS.md](CREDITS.md)
 and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No upstream endorsement is implied.
