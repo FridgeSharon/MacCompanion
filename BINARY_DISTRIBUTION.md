@@ -71,9 +71,15 @@ Solaar-derived/vendor HID++ backend must remain absent from the public build.
 
 ## Signing and release readiness
 
-The local signing inventory currently contains an **Apple Development** identity only;
-there is no usable **Developer ID Application** identity. The existing development app
-is arm64, version `0.1.0`, build `1`. It is not the public release artifact.
+The initial review found only an Apple Development identity. With the owner's approval,
+a **Developer ID Application** identity has now been created and installed in Keychain.
+An exported Release build, version `0.1.0` / build `20261101.2`, contains both Apple
+Silicon and Intel code in the app and helper. Its licenses, credits, signing identity,
+hardened runtime, secure timestamps and absence of debugging entitlements were verified.
+Apple notarization is pending; this is not yet an approved public download.
+
+See [RELEASING.md](RELEASING.md) for the reproducible release process and verification
+script. The existing development app is not used as the public release artifact.
 
 For a normal GitHub installation, use a Developer ID Application certificate, hardened
 runtime, a secure timestamp, and Apple notarization with the ticket stapled to the app.
