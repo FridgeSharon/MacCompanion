@@ -1,7 +1,9 @@
 # Licensing and distribution
 
-Reviewed 2026-11-01. This project deliberately publishes **source only**, without
-compiled app downloads, paid licenses, subscriptions or an automatic updater.
+Reviewed 2026-11-01. This project currently publishes **source only**. A free compiled
+download is being prepared; see [the binary-distribution review](BINARY_DISTRIBUTION.md)
+for the Mac Mouse Fix assessment and the remaining signing requirements. No compiled
+download, paid license, subscription or automatic updater is currently published.
 
 ## Can this app be sold?
 
@@ -51,10 +53,14 @@ Nuebling. The license permits source sharing with derivation credit; its conditi
 for publishing a compiled application are separate, including an exception for a
 substantially improved/separate derivative work.
 
-This source publication does not self-certify that exception for every future build.
-Before publishing compiled apps, determine that the executable-distribution conditions
-are satisfied, obtain clarification/permission where needed, or independently replace
-the affected portions. A free binary is not automatically exempt from those conditions.
+For the current Mac Companion implementation, our assessment is that the separate-work
+exception applies: a limited gesture adaptation is integrated into a distinct Mos-based
+app with scrolling, direct window layouts, Stage Manager reservation and AWDL control.
+This is an interpretation of the published license, not separate permission or an
+endorsement from the MMF author. The reasoning, required release attribution and exact
+scope are recorded in [BINARY_DISTRIBUTION.md](BINARY_DISTRIBUTION.md). Do not assume the
+same conclusion for an MMF clone, a different combination or a future redistribution.
+A free binary alone is not automatically exempt from the MMF conditions.
 The separate polynomial-regression component mentioned in MMF's license notes is not
 included here; its author's personal permission is not asserted as ours.
 

@@ -15,9 +15,10 @@ contains adaptations under the custom Mac Mouse Fix license.
 
 Read [LICENSING.md](LICENSING.md), [CREDITS.md](CREDITS.md) and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) before reuse or redistribution.
-This repository publishes source only. It does not publish a signed application,
-installer, automatic updater or binary release. Compiled redistribution needs its own
-license review, including the Mac Mouse Fix executable-distribution conditions.
+There is currently no downloadable application or automatic updater. A free ZIP download
+would let people install the app without Xcode. The [binary-distribution review](BINARY_DISTRIBUTION.md)
+records why the current app appears to meet Mac Mouse Fix's separate-work exception;
+Developer ID signing, notarization and release validation are still pending.
 
 ## Features
 
