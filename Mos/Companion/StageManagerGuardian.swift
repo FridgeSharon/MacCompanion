@@ -77,7 +77,7 @@ final class StageManagerGuardian {
         let orientation = CFPreferencesCopyAppValue("orientation" as CFString, dock) as? String
         if orientation == "left" { return .right }
         if orientation == "right" { return .left }
-        return NSLocale.characterDirection(forLanguage: Locale.current.languageCode ?? "en") == .rightToLeft ? .right : .left
+        return NSLocale.characterDirection(forLanguage: Locale.current.language.languageCode?.identifier ?? "en") == .rightToLeft ? .right : .left
     }
     private func invalidateHistory() {
         advanceGeneration()

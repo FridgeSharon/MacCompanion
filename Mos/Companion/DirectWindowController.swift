@@ -23,6 +23,8 @@ private final class WindowEpoch {
 final class DirectWindowController {
     static let shared = DirectWindowController()
     private let worker = WindowAccessibility.queue
+    private let titlebarWork = BoundedWindowWork(queue: WindowAccessibility.inputInspectionQueue)
+    private let dragWork = BoundedWindowWork(queue: WindowAccessibility.queue)
     private let epoch = WindowEpoch()
     private let lease = NativeWindowSettingsLease()
     private var tokens: [NSObjectProtocol] = []
@@ -255,7 +257,7 @@ final class DirectWindowController {
             verifiedClick = nil; return false
         case .inspect(let ticket):
             verifiedClick = nil
-            WindowAccessibility.inputInspectionQueue.async {
+            titlebarWork.submit {
                 let hit = WindowAccessibility.hit(at: point, number: number, config: context.config)
                 self.worker.async { self.trace(["event": "capture-hit", "window": hit?.key.number ?? 0, "titlebar": hit?.titlebar ?? false, "hitPath": hit?.hitPath ?? []]) }
                 DispatchQueue.main.async {
@@ -302,7 +304,7 @@ final class DirectWindowController {
                     downPoint: CGPoint(x: point.x, y: context.top - point.y)) }
             }
         case .leftMouseDragged:
-            worker.async { self.trackDrag(at: point, context: context, token: token) }
+            dragWork.submit { self.trackDrag(at: point, context: context, token: token) }
         case .leftMouseUp:
             preview?.orderOut(nil)
             worker.async {

@@ -51,10 +51,21 @@ final class NativeWindowSettingsLease {
         self.store = store; self.defaults = defaults
     }
     var hasJournal: Bool { defaults.data(forKey: Self.journalKey) != nil }
-    var owned: Bool {
+    private func journalEntries() -> [Entry]? {
         guard let data = defaults.data(forKey: Self.journalKey),
               let entries = try? JSONDecoder().decode([Entry].self, from: data),
-              entries.map(\.preference) == NativeWindowPreference.controls else { return false }
+              entries.map(\.preference) == NativeWindowPreference.controls,
+              entries.allSatisfy({ entry in
+                  guard let previous = entry.previous else { return true }
+                  switch (entry.preference.owned, previous) {
+                  case (.boolean(_), .boolean(_)), (.string(_), .string(_)): return true
+                  default: return false
+                  }
+              }) else { return nil }
+        return entries
+    }
+    var owned: Bool {
+        guard let entries = journalEntries() else { return false }
         return entries.allSatisfy { store.read($0.preference) == $0.preference.owned }
     }
     @discardableResult func acquire() -> Bool {
@@ -69,8 +80,10 @@ final class NativeWindowSettingsLease {
         return owned
     }
     @discardableResult func restore() -> Bool {
-        guard let data = defaults.data(forKey: Self.journalKey) else { return true }
-        guard let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return false }
+        guard hasJournal else { return true }
+        // Never write arbitrary domains, keys or value types from a damaged journal.
+        // Preserve it on failure so recovery remains reviewable and retryable.
+        guard let entries = journalEntries() else { return false }
         var success = true
         for entry in entries where store.read(entry.preference) == entry.preference.owned {
             if !store.write(entry.previous, to: entry.preference) { success = false }

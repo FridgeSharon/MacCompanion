@@ -30,17 +30,20 @@ static uint64_t (*hidSender)(CFTypeRef);
 
 static void receiveFrame(CFTypeRef device, const MCContactPrefix *contacts, int count, double time, int frame) {
     if (count < 0 || count > 16) return;
+    if (count > 0 && (!contacts || !isfinite(contacts->x) || !isfinite(contacts->y) ||
+        contacts->x < 0 || contacts->x > 1 || contacts->y < 0 || contacts->y > 1)) return;
     os_unfair_lock_lock(&frameLock);
-    MCTrackpadFrameHandler handler = frameHandler;
     uint64_t identifier = 0;
     for (int i = 0; i < deviceCount; i++) if (devices[i].handle == device) { identifier = devices[i].device; break; }
+    // Serialize delivery with stop/reset. The Swift receiver only updates its
+    // locked recognition state and enqueues main-thread work; it never re-enters
+    // this bridge or waits synchronously for the main thread.
+    if (frameHandler && identifier) {
+        if (count == 0) frameHandler(identifier, 0, 0, 0, 0, false, time);
+        else frameHandler(identifier, count, contacts->x, contacts->y, contacts->contact,
+                          contacts->state == 3 || contacts->state == 4, time);
+    }
     os_unfair_lock_unlock(&frameLock);
-    if (!handler || !identifier) return;
-    if (count == 0) { handler(identifier, 0, 0, 0, 0, false, time); return; }
-    if (!contacts || !isfinite(contacts->x) || !isfinite(contacts->y) ||
-        contacts->x < 0 || contacts->x > 1 || contacts->y < 0 || contacts->y > 1) return;
-    handler(identifier, count, contacts->x, contacts->y, contacts->contact,
-            contacts->state == 3 || contacts->state == 4, time);
 }
 
 static BOOL loadInterface(void) {
@@ -68,7 +71,7 @@ int MCStartTrackpadFrames(MCTrackpadFrameHandler handler) {
     if (!handler || !loadInterface()) return 0;
     deviceList = createList();
     if (!deviceList) return 0;
-    frameHandler = handler;
+    os_unfair_lock_lock(&frameLock); frameHandler = handler; os_unfair_lock_unlock(&frameLock);
     for (CFIndex i = 0; i < CFArrayGetCount(deviceList) && deviceCount < 16; i++) {
         CFTypeRef handle = CFArrayGetValueAtIndex(deviceList, i);
         io_service_t service = getService(handle);
@@ -125,8 +128,11 @@ uint64_t MCTrackpadDeviceForEvent(CGEventRef event) {
     } @catch (NSException *exception) {}
     CFRelease(hid);
     if (!sender) return 0;
+    uint64_t identifier = 0;
+    os_unfair_lock_lock(&frameLock);
     for (int i = 0; i < deviceCount; i++) {
-        if (sender == devices[i].device || sender == devices[i].service) return devices[i].device;
+        if (sender == devices[i].device || sender == devices[i].service) { identifier = devices[i].device; break; }
     }
-    return 0;
+    os_unfair_lock_unlock(&frameLock);
+    return identifier;
 }

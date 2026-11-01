@@ -18,11 +18,6 @@ class ScrollReverseDetailSettingsPopoverViewController: AdaptivePopover, ScrollO
         syncViewWithOptions()
     }
 
-    override func viewDidLayout() {
-        super.viewDidLayout()
-        updatePreferredContentSize()
-    }
-
     @IBAction func verticalReverseToggle(_ sender: NSButton) {
         getTargetApplicationScrollOptions().reverseVertical = sender.state == .on
         syncViewWithOptions()

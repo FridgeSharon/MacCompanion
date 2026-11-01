@@ -1,4 +1,5 @@
 import Cocoa
+import UniformTypeIdentifiers
 
 private final class CompanionPreferencesDocumentView: NSView {
     override var isFlipped: Bool { true }
@@ -181,7 +182,7 @@ final class CompanionPreferencesViewController: NSViewController, NSTableViewDat
     }
     @objc private func addApp() {
         let panel = NSOpenPanel(); panel.canChooseFiles = true; panel.canChooseDirectories = false
-        panel.allowedFileTypes = ["app"]; panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowedContentTypes = [.applicationBundle]; panel.directoryURL = URL(fileURLWithPath: "/Applications")
         guard panel.runModal() == .OK, let path = panel.url?.path else { return }
         CompanionSettings.shared.update { $0.excludedPaths.append(path) }; table.reloadData()
         if let index = CompanionSettings.shared.configuration.excludedPaths.firstIndex(of: path) {

@@ -1,5 +1,27 @@
 import Cocoa
 
+/// Permit one queued or executing lookup at a time. An unresponsive AX server
+/// must not make high-frequency input retain an unbounded backlog of work.
+final class BoundedWindowWork {
+    private let queue: DispatchQueue
+    private let lock = NSLock()
+    private var pending = false
+
+    init(queue: DispatchQueue) { self.queue = queue }
+
+    @discardableResult func submit(_ work: @escaping () -> Void) -> Bool {
+        lock.lock()
+        guard !pending else { lock.unlock(); return false }
+        pending = true
+        lock.unlock()
+        queue.async {
+            defer { self.lock.lock(); self.pending = false; self.lock.unlock() }
+            work()
+        }
+        return true
+    }
+}
+
 /// Some Catalyst accessibility servers return the nearest control rather than
 /// the element under a blank point. Resolve from actual rectangles, retaining
 /// real controls and giving up when an unpositioned control makes the hit unsafe.

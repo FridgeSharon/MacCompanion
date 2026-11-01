@@ -1123,34 +1123,6 @@
             </objects>
             <point key="canvasLocation" x="954" y="1365.5" />
         </scene>
-        <scene sceneID="79I-rH-ZaI">
-            <objects>
-                <viewController id="mUR-85-jNE" customClass="AdaptivePopover" customModule="Mos" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" id="Adm-9b-xST">
-                        <rect key="frame" x="0.0" y="0.0" width="391" height="34" />
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
-                        <subviews>
-                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zrl-5e-XRk">
-                                <rect key="frame" x="10" y="10" width="371" height="14" />
-                                <textFieldCell key="cell" controlSize="mini" sendsActionOnEndEditing="YES" alignment="left" title="Temporarily disable smooth scrolling to improve scrolling accuracy." id="Rgq-87-vjY">
-                                    <font key="font" metaFont="smallSystem" />
-                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
-                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog" />
-                                </textFieldCell>
-                            </textField>
-                        </subviews>
-                        <constraints>
-                            <constraint firstItem="zrl-5e-XRk" firstAttribute="top" secondItem="Adm-9b-xST" secondAttribute="top" constant="10" id="QhL-S9-XQV" />
-                            <constraint firstAttribute="trailing" secondItem="zrl-5e-XRk" secondAttribute="trailing" constant="12" id="RfB-KE-4NC" />
-                            <constraint firstItem="zrl-5e-XRk" firstAttribute="leading" secondItem="Adm-9b-xST" secondAttribute="leading" constant="12" id="XWU-Yt-4gW" />
-                            <constraint firstAttribute="bottom" secondItem="zrl-5e-XRk" secondAttribute="bottom" constant="10" id="bAx-rj-3OJ" />
-                        </constraints>
-                    </view>
-                </viewController>
-                <customObject id="9YO-Hc-WUu" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder" />
-            </objects>
-            <point key="canvasLocation" x="955" y="1882" />
-        </scene>
         <scene sceneID="cWM-rm-1Zc">
             <objects>
                 <viewController id="6NY-mX-uto" customClass="ScrollSmoothDetailSettingsPopoverViewController" customModule="Mos" customModuleProvider="target" sceneMemberID="viewController">

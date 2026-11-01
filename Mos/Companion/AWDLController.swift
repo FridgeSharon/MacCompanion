@@ -8,11 +8,28 @@ enum AWDLMode: Int, CaseIterable {
     var title: String {
         NSLocalizedString(["Automatic for games", "AWDL on", "AWDL off"][rawValue], comment: "AWDL mode")
     }
-    func suppress(onWiFi: Bool, gameActive: Bool) -> Bool {
-        switch self { case .game: return onWiFi && gameActive; case .on: return false; case .off: return true }
+    func suppress(onWiFi: Bool, gameActive: Bool, sessionActive: Bool = true) -> Bool {
+        switch self { case .game: return sessionActive && onWiFi && gameActive; case .on: return false; case .off: return true }
     }
     static func isGame(_ info: [String: Any]) -> Bool {
         info["LSApplicationCategoryType"] as? String == "public.app-category.games" || (info["LSSupportsGameMode"] as? Bool == true)
+    }
+}
+
+/// Waking a display does not necessarily reactivate this user's session.
+struct AWDLSessionState {
+    private var awake = true
+    private var active = true
+    var allowsAutomaticSuppression: Bool { awake && active }
+
+    mutating func receive(_ name: Notification.Name) {
+        switch name {
+        case NSWorkspace.willSleepNotification: awake = false
+        case NSWorkspace.didWakeNotification: awake = true
+        case NSWorkspace.sessionDidResignActiveNotification: active = false
+        case NSWorkspace.sessionDidBecomeActiveNotification: active = true
+        default: break
+        }
     }
 }
 
@@ -34,6 +51,7 @@ final class AWDLController {
     private var onWiFi = false
     private var requestPending = false
     private var stopped = true
+    private var session = AWDLSessionState()
     private var requestID: UInt64 = 0
     private(set) var interfaceUp: Bool?
     private(set) var status = NSLocalizedString("AWDL control is off", comment: "") {
@@ -66,19 +84,27 @@ final class AWDLController {
         stopped = false
         let center = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didActivateApplicationNotification, NSWorkspace.didTerminateApplicationNotification,
-                     NSWorkspace.didWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
-            tokens.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in self?.refresh() })
+                     NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification,
+                     NSWorkspace.sessionDidResignActiveNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+            tokens.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                self?.session.receive(note.name); self?.refresh()
+            })
         }
         let path = NWPathMonitor(); monitor = path
-        path.pathUpdateHandler = { [weak self] path in
-            DispatchQueue.main.async { self?.onWiFi = path.status == .satisfied && path.usesInterfaceType(.wifi); self?.refresh() }
+        path.pathUpdateHandler = { [weak self, weak path] update in
+            DispatchQueue.main.async {
+                guard let self, !self.stopped, self.monitor === path else { return }
+                self.onWiFi = update.status == .satisfied && update.usesInterfaceType(.wifi)
+                self.refresh()
+            }
         }
         path.start(queue: DispatchQueue(label: "com.github.FridgeSharon.MacCompanion.network"))
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in self?.refresh() }
+        timer?.tolerance = 0.5
         refresh()
     }
     func stop() {
-        stopped = true; timer?.invalidate(); timer = nil; monitor?.cancel(); monitor = nil
+        stopped = true; timer?.invalidate(); timer = nil; monitor?.cancel(); monitor = nil; onWiFi = false
         for token in tokens { NSWorkspace.shared.notificationCenter.removeObserver(token) }; tokens.removeAll()
         disconnect() // helper restores AWDL before exiting, including after a client crash
     }
@@ -122,7 +148,8 @@ final class AWDLController {
         }
         let active = NSWorkspace.shared.frontmostApplication
         let game = active?.bundleURL.flatMap { Bundle(url: $0)?.infoDictionary }.map(AWDLMode.isGame) ?? false
-        desiredSuppression = mode.suppress(onWiFi: onWiFi, gameActive: game)
+        desiredSuppression = mode.suppress(onWiFi: onWiFi, gameActive: game,
+            sessionActive: session.allowsAutomaticSuppression)
         if connection == nil {
             let client = NSXPCConnection(machServiceName: Self.serviceName, options: .privileged)
             client.remoteObjectInterface = NSXPCInterface(with: CompanionAWDLProtocol.self)
@@ -130,6 +157,7 @@ final class AWDLController {
             client.invalidationHandler = { [weak self, weak client] in
                 DispatchQueue.main.async {
                     guard let self, self.connection === client else { return }
+                    self.requestID &+= 1
                     self.connection = nil; self.requestPending = false; self.interfaceUp = nil
                     self.status = NSLocalizedString("AWDL helper disconnected; retrying", comment: "")
                 }
@@ -139,17 +167,20 @@ final class AWDLController {
         }
         guard !requestPending, let client = connection else { return }
         requestPending = true; requestID &+= 1; let id = requestID
-        let proxy = client.remoteObjectProxyWithErrorHandler { [weak self] error in
+        let object = client.remoteObjectProxyWithErrorHandler { [weak self] error in
             DispatchQueue.main.async {
                 guard let self, self.requestID == id else { return }
                 self.disconnect(); self.status = error.localizedDescription
             }
-        } as? CompanionAWDLProtocol
+        }
+        guard let proxy = object as? CompanionAWDLProtocol else {
+            disconnect(); status = NSLocalizedString("AWDL helper disconnected; retrying", comment: ""); return
+        }
         let requested = desiredSuppression
         if interfaceUp == nil || interfaceUp == requested {
             status = NSLocalizedString("Applying AWDL setting…", comment: "")
         }
-        proxy?.setSuppressed(requested) { [weak self] up, error in
+        proxy.setSuppressed(requested) { [weak self] up, error in
             DispatchQueue.main.async {
                 guard let self, self.requestID == id else { return }
                 self.requestPending = false; self.interfaceUp = up
