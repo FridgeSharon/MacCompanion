@@ -1,0 +1,32 @@
+# Credits and modifications
+
+Mac Companion is an independent, noncommercial modification of
+[Mos by Caldis and contributors](https://github.com/Caldis/Mos), based on commit
+`8a2fd112e2af444c37ca5f65f42e9bd19c08a5c2`. Original authorship and source headers
+are retained. Integration and publication preparation: **Guy Sharon**.
+
+Modifications include configurable mouse gestures, direct Fill/Restore and tiling with a
+Stage Manager reservation, integrated AWDL control, and lifecycle/resource fixes. The
+public snapshot also removes Mos's vendor-specific HID++ backend, integration bridge,
+device catalogues, associated tests and vendor aliases. A small native-input adapter
+keeps the ordinary Mos mouse/keyboard UI working without that backend.
+
+| Project | Credit and use | License text |
+| --- | --- | --- |
+| [Mos](https://github.com/Caldis/Mos) | Caldis and contributors. Application, scrolling engine, buttons, settings, UI, assets and retained tests. | [Original notice](LICENSES/Mos-original-LICENSE.txt), [CC BY-NC 4.0](LICENSES/CC-BY-NC-4.0.txt) |
+| [Mac Mouse Fix](https://github.com/noah-nuebling/mac-mouse-fix) | Noah Nuebling, copyright 2019–2023 in the referenced license. Native gesture protocol/bridge and continuous scaling adapted from revision `2dae68a01ebcb4c645161160a7872a60ecf58ace`, particularly TouchSimulator.m. Relevant files: `Mos/Companion/NativeGestureBridge.*`, `ContinuousGestures.swift`. | [Custom MMF License](LICENSES/MacMouseFix.txt) |
+| [Rectangle](https://github.com/rxhanson/Rectangle) | Ryan Hanson, copyright 2019–2026; based on Spectacle by Eric Czarny, copyright 2017. Window/Stage Manager behavior reference and adapted Enhanced UI frame transaction in `WindowAccessibility.swift`. | [MIT, including Spectacle credit](LICENSES/Rectangle-MIT.txt) |
+| [AWDLControl](https://github.com/james-howard/AWDLControl) | James Howard, copyright 2026. AWDL policy and helper/XPC architecture adapted in `AWDLController.swift`, `AWDLPreferencesViewController.swift` and `AWDLHelper/main.m`. | [MIT](LICENSES/AWDLControl-MIT.txt) |
+| [Charts / DGCharts](https://github.com/ChartsOrg/Charts) | Daniel Cohen Gindi and Philipp Jahoda, copyright 2016–2019 in the pinned license. Package 5.1.0, revision `dd9c72e3d7e751e769971092a6bd72d39198ae63`. The older danielgindi/Charts URL redirects to ChartsOrg. | [Apache-2.0](LICENSES/Charts-Apache-2.0.txt) |
+| [LoginServiceKit](https://github.com/Clipy/LoginServiceKit) | Clipy Project, copyright 2015–2020. Package 2.4.0, revision `5af9098805ff603830aec65754071c6514bbcacd`. | [Apache-2.0](LICENSES/LoginServiceKit-Apache-2.0.txt) |
+
+Mos also acknowledges [Smoothscroll for websites](https://github.com/galambalazs/smoothscroll-for-websites),
+[Sparkle](https://github.com/sparkle-project/Sparkle) and
+[Solaar](https://github.com/pwr-Solaar/Solaar). Sparkle is not linked here. The
+Solaar-referencing HID++ implementation/catalogues from the private upstream-derived
+tree are not included in this public snapshot; this repository does not relicense them.
+
+Apple platform symbols and other marks remain the property of their respective owners
+and are not relicensed as our own artwork. The source is intended for macOS/Apple-platform
+application development, not redistribution of those resources as a separate asset pack.
+No upstream author, Apple or Logitech endorsement is implied.
