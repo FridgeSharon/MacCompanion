@@ -2,6 +2,25 @@ import XCTest
 @testable import Mos_Debug
 
 final class CompanionTests: XCTestCase {
+    func testPreferencesKeepsEveryTabVisibleWithoutResizing() throws {
+        let controller: PreferencesWindowController = Utils.instantiateControllerFromStoryboard(
+            withIdentifier: WINDOW_IDENTIFIER.preferencesWindowController)
+        let window = try XCTUnwrap(controller.window)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        controller.showWindow(nil)
+        let tabs = try XCTUnwrap(window.contentViewController as? PreferencesTabViewController)
+        XCTAssertEqual(tabs.tabViewItems.count, 7)
+        let initialFrame = window.frame
+        for index in tabs.tabViewItems.indices {
+            tabs.selectedTabViewItemIndex = index
+            window.contentView?.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+            XCTAssertEqual(window.frame, initialFrame, "Tab \(index) resized the settings window")
+            let toolbar = try XCTUnwrap(window.toolbar)
+            XCTAssertEqual(toolbar.visibleItems?.count, 7, "Tab \(index) hid a settings tab")
+        }
+    }
     func testNativeThumbBindingSurvivesWithoutVendorBackend() {
         let recorded = RecordedEvent(type: .mouse, code: 3, modifiers: 0, deviceFilter: nil)
         let native = recorded.normalizedForButtonBinding(diagnosis: LogiCenter.shared.buttonCaptureDiagnosis(forMosCode: 3))

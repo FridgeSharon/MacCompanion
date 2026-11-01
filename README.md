@@ -4,7 +4,7 @@ A free, **source-available, noncommercial** macOS menu-bar utility based on
 [Mos by Caldis and contributors](https://github.com/Caldis/Mos).
 
 It combines smooth mouse scrolling, thumb-button gestures, window layouts with space
-for Stage Manager, and optional AWDL control in one application.
+for Stage Manager, three-finger trackpad middle-click, and optional AWDL control in one application.
 
 ## License first
 
@@ -18,7 +18,7 @@ Read [LICENSING.md](LICENSING.md), [CREDITS.md](CREDITS.md) and
 There is currently no downloadable application or automatic updater. A free ZIP download
 would let people install the app without Xcode. The [binary-distribution review](BINARY_DISTRIBUTION.md)
 records why the current app appears to meet Mac Mouse Fix's separate-work exception;
-Developer ID signing, notarization and release validation are still pending.
+A Developer ID-signed candidate is under validation. No public binary release has been published yet.
 
 ## Features
 
@@ -29,6 +29,8 @@ Developer ID signing, notarization and release validation are still pending.
   Other supported systems/actions use the discrete action backend.
 - Direct Fill/Restore, halves and quarters, using title-bar double-clicks or edge drags.
 - A configurable Stage Manager gap calculated before direct window placement.
+- Optional three-finger trackpad taps and physical clicks, including middle-button dragging.
+  This is an independent implementation inspired by Middle's behavior; no Middle code is included.
 - Optional AWDL on/off or automatic control for a foreground game on Wi-Fi, using a
   narrowly scoped, separately approved privileged helper.
 
@@ -43,6 +45,10 @@ hardware debug panel and vendor-only button aliases/actions. The inherited backe
 included Solaar-derived material that was not cleared for combination with the
 noncommercial application license. It has been excluded as a whole, rather than
 removing credit or pretending that the same code is newly licensed.
+
+The lean build keeps scrolling and app exceptions, thumb gestures, window layouts, AWDL,
+trackpad middle-click and launch-at-login. Generic input remapping, event-monitor tools,
+donation screens and updater screens have been removed. The icon is original artwork.
 
 Native mouse buttons, scrolling, gestures, layouts and AWDL remain in the source. A mouse
 button exposed only through a vendor protocol is unsupported in this snapshot; configure
@@ -92,6 +98,12 @@ restore history is in memory. Option-clicking the green button remains native an
 need corrective resizing. Some windows enforce minimum sizes or reject Accessibility
 resizing. Full-screen, dialog, offstage and excluded windows are skipped.
 
+Trackpad middle-click uses private macOS touch interfaces on macOS 13–27; unknown future
+versions fail closed. Native three-finger Look Up or three-finger drag may need to be
+changed in System Settings before the corresponding input can work. These settings are
+never changed automatically. Reconnect an external trackpad and toggle the feature again
+if it is not detected. Magic Mouse gestures are outside this implementation.
+
 AWDL suppression interrupts AirDrop/Continuity while active. The helper changes only
 `awdl0`; quitting or losing the app connection restores it. Game detection checks the
 foreground app's declared game category/Game Mode support and Wi-Fi, and does not infer
@@ -103,10 +115,19 @@ results as acceptance of every public configuration.
 
 ## Credits
 
-Mos — Caldis and contributors; Mac Mouse Fix — Noah Nuebling; Rectangle — Ryan Hanson
-and Spectacle/Eric Czarny; AWDLControl — James Howard; Charts — Daniel Cohen Gindi and
-Philipp Jahoda; LoginServiceKit — Clipy Project. Mac Companion integration and public
-source preparation — Guy Sharon.
+| Project | Original authors | Contribution |
+| --- | --- | --- |
+| [Mos](https://github.com/Caldis/Mos) | Caldis and contributors | Scrolling engine and application foundation |
+| [Mac Mouse Fix](https://github.com/noah-nuebling/mac-mouse-fix) | Noah Nuebling | Native gesture protocol and continuous gesture adaptations |
+| [Rectangle](https://github.com/rxhanson/Rectangle) | Ryan Hanson | Window behavior references and frame transactions |
+| [Spectacle](https://github.com/eczarny/spectacle) | Eric Czarny | Earlier work credited by Rectangle |
+| [AWDLControl](https://github.com/james-howard/AWDLControl) | James Howard | AWDL policy and helper architecture |
+| [Charts](https://github.com/ChartsOrg/Charts) | Daniel Cohen Gindi and Philipp Jahoda | Historical event-monitor dependency, removed from the lean build |
+| [LoginServiceKit](https://github.com/Clipy/LoginServiceKit) | Clipy Project | Launch-at-login support |
+
+Mac Companion integration, independent trackpad middle-click and original additions — Guy Sharon.
+[Middle by Ryan Hanson](https://github.com/rxhanson/Middle-Community) is a behavioral
+reference only; no code or assets were copied from it.
 
 Full scope, license texts and modification notices are linked in [CREDITS.md](CREDITS.md)
 and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No upstream endorsement is implied.

@@ -24,19 +24,21 @@ private final class PreferencesPaneContainer: NSViewController {
 
     override func loadView() {
         let root = NSView(frame: NSRect(origin: .zero, size: PreferencesTabViewController.contentSize))
+        root.translatesAutoresizingMaskIntoConstraints = false
         addChild(content)
         let form = content.view
-        let naturalSize = form.frame.size
         form.translatesAutoresizingMaskIntoConstraints = false
         root.addSubview(form)
         // Legacy forms determine their height through internal constraints. A weak
         // fallback also sizes the newer panes whose content does not pin both edges.
-        let height = form.heightAnchor.constraint(equalToConstant: naturalSize.height)
+        let width = form.widthAnchor.constraint(equalToConstant: 620)
+        width.priority = .defaultLow
+        let height = form.heightAnchor.constraint(equalToConstant: PreferencesTabViewController.contentSize.height)
         height.priority = .defaultLow
         NSLayoutConstraint.activate([
             root.widthAnchor.constraint(equalToConstant: PreferencesTabViewController.contentSize.width),
             root.heightAnchor.constraint(equalToConstant: PreferencesTabViewController.contentSize.height),
-            form.widthAnchor.constraint(equalToConstant: naturalSize.width),
+            width,
             form.centerXAnchor.constraint(equalTo: root.centerXAnchor),
             form.topAnchor.constraint(equalTo: root.topAnchor),
             form.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor),
@@ -51,6 +53,17 @@ class PreferencesTabViewController: NSTabViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.setFrameSize(Self.contentSize)
+        tabView.frame = view.bounds
+        for item in tabViewItems {
+            let symbol: String
+            switch item.viewController {
+            case is PreferencesGeneralViewController: symbol = "gearshape"
+            case is PreferencesScrollingViewController: symbol = "circle.dotted.circle"
+            default: symbol = "app.badge"
+            }
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        }
         let companion = NSTabViewItem(viewController: CompanionPreferencesViewController())
         companion.label = NSLocalizedString("Gestures & Space", comment: "Private utility preferences tab")
         companion.image = NSImage(named: NSImage.actionTemplateName)

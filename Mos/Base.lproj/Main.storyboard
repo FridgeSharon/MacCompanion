@@ -25,7 +25,7 @@
                 <windowController storyboardIdentifier="preferencesWindowController" showSeguePresentationStyle="single" id="7TR-R5-fGE" customClass="PreferencesWindowController" customModule="Mos" customModuleProvider="target" sceneMemberID="viewController">
                     <window key="window" title="Preferences" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" titlebarAppearsTransparent="YES" id="cvF-hf-KVW">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" />
-                        <rect key="contentRect" x="13" y="0.0" width="450" height="315" />
+                        <rect key="contentRect" x="13" y="0.0" width="820" height="650" />
                         <rect key="screenRect" x="-412" y="1050" width="2560" height="1080" />
                         <connections>
                             <outlet property="delegate" destination="7TR-R5-fGE" id="aq4-gh-Ch5" />
@@ -46,14 +46,11 @@
                     <tabViewItems>
                         <tabViewItem identifier="general" image="SF.gearshape" id="Qwc-OE-zHR" />
                         <tabViewItem identifier="scrolling" image="SF.circle.dotted.circle" id="P9R-tX-qfW" />
-                        <tabViewItem identifier="buttons" image="SF.button.horizontal.top.press" id="BTN-UI-123" />
                         <tabViewItem identifier="application" image="SF.app.background.dotted" id="gfS-Ix-zI5" />
-                        <tabViewItem identifier="updates" image="SF.arrow.triangle.capsulepath" id="1sm-Qq-6GS" />
-                        <tabViewItem identifier="about" image="SF.person.crop.circle.dashed" id="MrA-I8-n0Z" />
                     </tabViewItems>
                     <viewControllerTransitionOptions key="transitionOptions" />
                     <tabView key="tabView" wantsLayer="YES" misplaced="YES" type="noTabsNoBorder" id="sxC-q7-Qs6">
-                        <rect key="frame" x="0.0" y="0.0" width="450" height="314" />
+                        <rect key="frame" x="0.0" y="0.0" width="820" height="650" />
                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES" />
                         <font key="font" metaFont="system" />
                         <connections>
