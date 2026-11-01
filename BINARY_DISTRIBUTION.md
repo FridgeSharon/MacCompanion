@@ -73,10 +73,11 @@ Solaar-derived/vendor HID++ backend must remain absent from the public build.
 
 The initial review found only an Apple Development identity. With the owner's approval,
 a **Developer ID Application** identity has now been created and installed in Keychain.
-An exported Release build, version `0.1.0` / build `20261101.2`, contains both Apple
-Silicon and Intel code in the app and helper. Its licenses, credits, signing identity,
+The corrected Release candidate, version `0.1.0` / build `20261101.6`, contains both
+Apple Silicon and Intel code in the app and helper. Its licenses, credits, signing identity,
 hardened runtime, secure timestamps and absence of debugging entitlements were verified.
-Apple notarization is pending; this is not yet an approved public download.
+Apple notarization was accepted on 2026-11-01. Final packaging and release review are
+separate from Apple's malware/signature checks; no public download has been published yet.
 
 See [RELEASING.md](RELEASING.md) for the reproducible release process and verification
 script. The existing development app is not used as the public release artifact.
@@ -105,6 +106,8 @@ Before publishing the actual artifact:
    separately from the private app. Installation on another Mac should be tested before
    describing the download as stable. Mark an initial release as a prerelease until then.
 
-Source compilation previously passed 133 tests. That is not evidence of a notarized
-download or a fresh installation. The private installed app and its settings are separate
-and have not been changed for this review.
+The lean source passed 141 signed tests, including fixed-window tab visibility and
+content-boundary checks. See VALIDATION.md for owner-reported physical checks and their
+limits. A local build with the existing private identity was installed separately,
+preserving the original app, preferences and signing requirement for rollback. It is
+not the public Developer ID download artifact.

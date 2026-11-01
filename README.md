@@ -18,7 +18,7 @@ Read [LICENSING.md](LICENSING.md), [CREDITS.md](CREDITS.md) and
 There is currently no downloadable application or automatic updater. A free ZIP download
 would let people install the app without Xcode. The [binary-distribution review](BINARY_DISTRIBUTION.md)
 records why the current app appears to meet Mac Mouse Fix's separate-work exception;
-A Developer ID-signed candidate is under validation. No public binary release has been published yet.
+A Developer ID-signed and notarized prerelease candidate is under review. No public binary release has been published yet.
 
 ## Features
 

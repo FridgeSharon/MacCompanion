@@ -27,7 +27,10 @@ Validated 2026-11-01 on macOS 27 with the installed Xcode macOS SDK.
   entitlement and mutual XPC identity checks. No signing credentials are distributed.
 
 The public app has a separate bundle identifier and has not overwritten the private
-installation. The private app and its settings are retained for rollback. The public
+installation. The original private app and its settings are retained for rollback. A locally signed
+build of the same corrected source was then installed using the existing private app
+identity and signing requirement; its Middle Click and AWDL panes were visually checked.
+Existing continuous-gesture/direct-sizing choices and AWDL automatic mode were preserved. The public
 AWDL helper remains disabled during this validation; its installation, approval and
 live network policy are not established by the private helper's earlier checks.
 
