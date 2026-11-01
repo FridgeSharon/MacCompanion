@@ -19,6 +19,20 @@ final class CompanionTests: XCTestCase {
             XCTAssertEqual(window.frame, initialFrame, "Tab \(index) resized the settings window")
             let toolbar = try XCTUnwrap(window.toolbar)
             XCTAssertEqual(toolbar.visibleItems?.count, 7, "Tab \(index) hid a settings tab")
+            let pane = try XCTUnwrap(tabs.tabViewItems[index].viewController?.view)
+            func checkVisibleContent(_ view: NSView) {
+                for child in view.subviews where !child.isHidden {
+                    if child is NSTextField || child is NSButton {
+                        let bounds = child.convert(child.bounds, to: pane)
+                        XCTAssertTrue(pane.bounds.insetBy(dx: -1, dy: -1).contains(bounds),
+                            "Tab \(index) clips \(type(of: child)): \(bounds)")
+                    }
+                    // A scroll view deliberately clips its document; its viewport
+                    // remains fixed while longer settings content scrolls inside it.
+                    if !(child is NSScrollView) { checkVisibleContent(child) }
+                }
+            }
+            checkVisibleContent(pane)
         }
     }
     func testNativeThumbBindingSurvivesWithoutVendorBackend() {

@@ -17,6 +17,7 @@ final class CompanionAboutViewController: NSViewController {
         let credits = NSTextField(wrappingLabelWithString: NSLocalizedString(
             "Based on Mos by Caldis and contributors. Includes adaptations from Mac Mouse Fix, Rectangle/Spectacle and AWDLControl, and uses LoginServiceKit. Free for noncommercial use under the included licenses.", comment: "About credits"))
         credits.alignment = .center; stack.addArrangedSubview(credits)
+        credits.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         let licenses = NSButton(title: NSLocalizedString("Credits and licenses…", comment: "About button"), target: self, action: #selector(showCredits))
         let quit = NSButton(title: NSLocalizedString("Quit", comment: "Quit app"), target: NSApp, action: #selector(NSApplication.terminate(_:)))
         let actions = NSStackView(views: [licenses, quit]); actions.spacing = 12

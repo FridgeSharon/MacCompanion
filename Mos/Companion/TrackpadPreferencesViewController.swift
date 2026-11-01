@@ -27,6 +27,9 @@ final class TrackpadPreferencesViewController: NSViewController {
             "Experimental: uses macOS touch interfaces. Native three-finger Look Up or three-finger drag can conflict; these system settings are never changed automatically.", comment: "Trackpad compatibility"))
         compatibility.textColor = .secondaryLabelColor; compatibility.font = .systemFont(ofSize: 11)
         stack.addArrangedSubview(compatibility)
+        for field in stack.arrangedSubviews.compactMap({ $0 as? NSTextField }) {
+            field.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         root.addSubview(stack)
         NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24),
             stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24),

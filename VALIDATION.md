@@ -7,7 +7,8 @@ Validated 2026-11-01 on macOS 27 with the installed Xcode macOS SDK.
   test host with global app startup and input handlers disabled under XCTest.
 - A real AppKit Preferences-window regression test cycles all seven tabs, requires
   all seven toolbar items to remain visible, and checks that the window frame stays
-  unchanged. The final run reports no conflicting constraints or invalid storyboard
+  unchanged. It also checks that non-scrolling labels and controls stay inside each
+  pane. The final run reports no conflicting constraints or invalid storyboard
   tab relationships for this check.
 - Gesture, layout, native preference recovery, scroll filtering/phases, idle
   display-link recovery and settings-migration checks remain covered. Eight focused

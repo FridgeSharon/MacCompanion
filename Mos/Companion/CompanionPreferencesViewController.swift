@@ -135,6 +135,9 @@ final class CompanionPreferencesViewController: NSViewController, NSTableViewDat
         removeButton.action = #selector(removeApp); removeButton.bezelStyle = .rounded; removeButton.isEnabled = false
         stack.addArrangedSubview(row(add, removeButton))
         stack.addArrangedSubview(text("Mac Companion · Based on Mos by Caldis · Updates installed manually", secondary: true))
+        for field in stack.arrangedSubviews.compactMap({ $0 as? NSTextField }) {
+            field.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         refreshStatus()
     }
 

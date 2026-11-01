@@ -31,8 +31,12 @@ private final class PreferencesPaneContainer: NSViewController {
         root.addSubview(form)
         // Legacy forms determine their height through internal constraints. A weak
         // fallback also sizes the newer panes whose content does not pin both edges.
-        let width = form.widthAnchor.constraint(equalToConstant: 620)
-        width.priority = .defaultLow
+        // Legacy storyboard forms derive a 450-point width from their controls.
+        // New panes use 620 points. A required width prevents long help text from
+        // expanding the form beyond the fixed window and clipping its left edge.
+        let legacy = content is PreferencesGeneralViewController ||
+            content is PreferencesScrollingViewController || content is PreferencesApplicationViewController
+        let width = form.widthAnchor.constraint(equalToConstant: legacy ? 450 : 620)
         let height = form.heightAnchor.constraint(equalToConstant: PreferencesTabViewController.contentSize.height)
         height.priority = .defaultLow
         NSLayoutConstraint.activate([

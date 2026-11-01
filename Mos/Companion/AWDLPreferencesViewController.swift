@@ -50,6 +50,9 @@ final class AWDLPreferencesViewController: NSViewController {
         remove.target = self; remove.action = #selector(removeHelper)
         let buttons = NSStackView(views: [approval, remove]); buttons.spacing = 12; stack.addArrangedSubview(buttons)
         stack.addArrangedSubview(label("Includes AWDLControl functionality by James Howard (MIT license). The bundled helper runs with administrator privileges and controls only AWDL.", secondary: true))
+        for field in stack.arrangedSubviews.compactMap({ $0 as? NSTextField }) {
+            field.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         observer = NotificationCenter.default.addObserver(forName: AWDLController.changed, object: nil, queue: .main) { [weak self] _ in self?.refresh() }
         refresh()
     }
