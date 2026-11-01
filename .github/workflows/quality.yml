@@ -20,10 +20,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 2
       - name: Audit source export
         run: python3 scripts/audit_export.py
       - name: Check whitespace
-        run: git show --format= --check HEAD
+        # A PR checkout is a merge commit whose first parent is the base branch.
+        # Keep that parent available so inherited files are not treated as additions.
+        run: git diff --check HEAD^ HEAD
       - name: Compile app and tests without signing or launching
         run: ./scripts/build.sh check
       - name: Analyze native bridges and helper
