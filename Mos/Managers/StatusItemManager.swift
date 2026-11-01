@@ -13,11 +13,23 @@ class StatusItemManager: NSMenu, NSMenuDelegate {
     static let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     let item = StatusItemManager.statusItem
     
+    private static func companionIcon() -> NSImage {
+        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
+            NSColor.black.setStroke()
+            let body = NSBezierPath(roundedRect: NSRect(x: 4, y: 1.5, width: 10, height: 15), xRadius: 5, yRadius: 5)
+            body.lineWidth = 1.5; body.stroke()
+            let wheel = NSBezierPath(); wheel.move(to: NSPoint(x: 9, y: 11)); wheel.line(to: NSPoint(x: 9, y: 14))
+            wheel.lineWidth = 1.7; wheel.lineCapStyle = .round; wheel.stroke()
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
     // 初始化
     override func awakeFromNib() {
         NSLog("Module initialized: StatusItemManager")
         // 设置图标/行为
-        item.button?.image = NSImage(systemSymbolName: "computermouse", accessibilityDescription: "Mac Companion")
+        item.button?.image = Self.companionIcon()
         item.button?.toolTip = "Mac Companion"
         // 设置事件响应
         item.menu = self
@@ -71,22 +83,7 @@ extension StatusItemManager {
         Utils.requireAccessibilityPermissions()
     }
     // 按下 Option 按钮的菜单
-    @objc func buildOptionMenu() {
-        if let menu = item.menu {
-            // Reset
-            menu.removeAllItems()
-            // Monitor
-            Utils.addMenuItem(to: menu, title: "Debug: Event Monitor", action: #selector(monitorClick))
-            // Toast Debug
-            Utils.addMenuItem(to: menu, title: "Debug: Toast", action: #selector(toastDebugClick))
-            // Preferences
-            Utils.addMenuItem(to: menu, title: NSLocalizedString("Preferences", comment: ""), icon: #imageLiteral(resourceName: "SF.gauge"), action: #selector(preferencesClick))
-            addAWDLMenu(to: menu)
-            addWindowMenu(to: menu)
-            // Quit
-            Utils.addMenuItemWithSeparator(to: menu, title: NSLocalizedString("Quit", comment: ""), icon: #imageLiteral(resourceName: "SF.escape"), action: #selector(quitClick))
-        }
-    }
+    @objc func buildOptionMenu() { buildNormalMenu() }
     // 常规菜单
     @objc func buildNormalMenu() {
         if let menu = item.menu {
@@ -145,15 +142,9 @@ extension StatusItemManager {
     @objc private func awdlModeChanged(_ item: NSMenuItem) {
         if let mode = AWDLMode(rawValue: item.tag) { AWDLController.shared.setMode(mode) }
     }
-    @objc func monitorClick() {
-        WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.monitorWindowController)
-    }
-    @objc func hidDebugClick() {
-        LogiCenter.shared.showDebugPanel()
-    }
-    @objc func toastDebugClick() {
-        Toast.showTestPanel()
-    }
+
+
+
     @objc func preferencesClick() {
         WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.preferencesWindowController)
     }

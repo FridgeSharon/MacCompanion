@@ -315,15 +315,7 @@ final class CompanionUpgradeTests: XCTestCase {
         clicks.down(window: 4, point: point, time: 11, count: 1, titlebar: true)
         XCTAssertTrue(clicks.shouldFill(window: 4, point: point, time: 11.2, count: 2, titlebar: true, interval: 0.5))
     }
-    func testWindowActionsAreRoutedAndHaveNoDefaultKeyboardEquivalent() {
-        for layout in CompanionWindowLayout.allCases {
-            let identifier = "companionWindow." + layout.rawValue
-            let shortcut = SystemShortcut.getShortcut(named: identifier)
-            XCTAssertNotNil(shortcut); XCTAssertEqual(shortcut?.keyEquivalent.keyEquivalent, "")
-            XCTAssertEqual(SystemShortcut.windowLayout(identifier), layout)
-            XCTAssertEqual(shortcut?.executionMode, .trigger)
-        }
-    }
+
 }
 
 private final class WindowPreferenceTestStore: NativeWindowPreferenceStore {
@@ -627,5 +619,70 @@ final class WindowHitSelectionTests: XCTestCase {
         let stale = info(99, frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         let chosen = WindowHitSelection.select(at: point, requested: stale, windows: [info(20)])
         XCTAssertEqual(chosen?[kCGWindowNumber as String] as? Int, 20)
+    }
+}
+
+
+final class TrackpadMiddleClickTests: XCTestCase {
+    private func frame(_ count: Int, _ time: Double, _ x: Double = 0.5, contact: Int32 = 1, touching: Bool = true, state: inout TrackpadTapRecognizer) -> Bool {
+        state.update(count: count, point: CGPoint(x: x, y: 0.5), contact: contact, touching: touching, time: time)
+    }
+    func testThreeFingerTapFiresOnceAfterAllFingersLift() {
+        var state = TrackpadTapRecognizer()
+        XCTAssertFalse(frame(3, 1, state: &state)); XCTAssertFalse(frame(2, 1.05, state: &state))
+        XCTAssertFalse(frame(1, 1.07, state: &state)); XCTAssertTrue(frame(0, 1.1, state: &state))
+        XCTAssertFalse(frame(0, 1.2, state: &state))
+    }
+    func testTwoAndFourFingersKeepTheirNativeGestures() {
+        for count in [2, 4] {
+            var state = TrackpadTapRecognizer()
+            XCTAssertFalse(frame(count, 1, state: &state)); XCTAssertFalse(frame(0, 1.1, state: &state))
+        }
+        var state = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &state); _ = frame(4, 1.02, state: &state)
+        XCTAssertFalse(frame(0, 1.1, state: &state))
+    }
+    func testHoverAndRestingContactsDoNotClick() {
+        var hover = TrackpadTapRecognizer()
+        _ = frame(3, 1, touching: false, state: &hover)
+        XCTAssertFalse(frame(0, 1.1, state: &hover))
+        var resting = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &resting)
+        XCTAssertFalse(frame(0, 1.5, state: &resting))
+    }
+    func testSwipeAndChangedContactAreRejected() {
+        var swipe = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &swipe); _ = frame(3, 1.05, 0.6, state: &swipe)
+        XCTAssertFalse(frame(0, 1.1, state: &swipe))
+        var changed = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &changed); _ = frame(3, 1.05, contact: 2, state: &changed)
+        XCTAssertFalse(frame(0, 1.1, state: &changed))
+    }
+    func testPhysicalClickSuppressesTapAndCancelCannotFire() {
+        var state = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &state); state.physicalClick()
+        XCTAssertFalse(frame(0, 1.1, state: &state))
+        _ = frame(3, 2, state: &state); state.cancel()
+        XCTAssertFalse(frame(0, 2.1, state: &state))
+    }
+    func testRelandingDuringReleaseDoesNotBecomeAnotherTap() {
+        var state = TrackpadTapRecognizer()
+        _ = frame(3, 1, state: &state); _ = frame(2, 1.02, state: &state)
+        _ = frame(3, 1.04, state: &state)
+        XCTAssertFalse(frame(0, 1.1, state: &state))
+    }
+    func testMiddleHoldRequiresKnownTrackpadAndMatchingRelease() {
+        var session = TrackpadMiddleSession()
+        XCTAssertFalse(session.begin(device: 0, threeFingers: true))
+        XCTAssertFalse(session.begin(device: 10, threeFingers: false))
+        XCTAssertTrue(session.begin(device: 10, threeFingers: true))
+        XCTAssertFalse(session.matches(20)); XCTAssertFalse(session.end(device: 20))
+        XCTAssertTrue(session.matches(10)); XCTAssertTrue(session.end(device: 10))
+        XCTAssertFalse(session.end(device: 10))
+    }
+    func testCancelledMiddleHoldReleasesExactlyOnce() {
+        var session = TrackpadMiddleSession()
+        XCTAssertTrue(session.begin(device: 10, threeFingers: true))
+        XCTAssertTrue(session.cancel()); XCTAssertFalse(session.cancel())
     }
 }

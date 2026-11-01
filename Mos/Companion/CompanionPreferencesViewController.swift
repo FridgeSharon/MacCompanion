@@ -111,7 +111,7 @@ final class CompanionPreferencesViewController: NSViewController, NSTableViewDat
         stack.addArrangedSubview(sizingStatus)
         let restore = NSButton(title: NSLocalizedString("Restore macOS Window Controls", comment: ""), target: self, action: #selector(restoreControls))
         stack.addArrangedSubview(restore)
-        stack.addArrangedSubview(text("Fill, halves, quarters and Restore are in the menu bar. Assign optional shortcuts in Buttons → Window layouts.", secondary: true))
+        stack.addArrangedSubview(text("Fill, halves, quarters and Restore are available in the menu bar.", secondary: true))
         stack.addArrangedSubview(heading("Stage Manager space"))
         stack.addArrangedSubview(toggle("Keep space whenever Stage Manager is on", state: config.stageEnabled, action: #selector(stageChanged(_:))))
         let width = NSSlider(value: config.stageWidth, minValue: 40, maxValue: 500, target: self, action: #selector(widthChanged(_:)))
@@ -122,7 +122,7 @@ final class CompanionPreferencesViewController: NSViewController, NSTableViewDat
         stageStatus.font = .systemFont(ofSize: 11); stageStatus.textColor = .secondaryLabelColor
         stack.addArrangedSubview(stageStatus)
         let secondLine = separator(); stack.addArrangedSubview(secondLine); secondLine.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        stack.addArrangedSubview(heading("Pause gestures and window adjustments in"))
+        stack.addArrangedSubview(heading("Pause gestures, middle-click and window adjustments in"))
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("application")); column.title = "Application"; column.width = 480
         column.isEditable = false
         table.addTableColumn(column); table.headerView = nil; table.dataSource = self; table.delegate = self; table.rowHeight = 22
@@ -134,7 +134,7 @@ final class CompanionPreferencesViewController: NSViewController, NSTableViewDat
         removeButton.title = NSLocalizedString("Remove selected", comment: ""); removeButton.target = self
         removeButton.action = #selector(removeApp); removeButton.bezelStyle = .rounded; removeButton.isEnabled = false
         stack.addArrangedSubview(row(add, removeButton))
-        stack.addArrangedSubview(text("Mac Companion · Private build based on Mos by Caldis · Updates installed manually", secondary: true))
+        stack.addArrangedSubview(text("Mac Companion · Based on Mos by Caldis · Updates installed manually", secondary: true))
         refreshStatus()
     }
 

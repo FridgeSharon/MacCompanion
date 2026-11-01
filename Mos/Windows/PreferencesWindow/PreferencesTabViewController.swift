@@ -30,8 +30,6 @@ class PreferencesTabViewController: NSTabViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // This private fork must never offer the upstream updater.
-        for item in tabViewItems where item.viewController is PreferencesUpdatesViewController { removeTabViewItem(item) }
         let companion = NSTabViewItem(viewController: CompanionPreferencesViewController())
         companion.label = NSLocalizedString("Gestures & Space", comment: "Private utility preferences tab")
         companion.image = NSImage(named: NSImage.actionTemplateName)
@@ -40,6 +38,14 @@ class PreferencesTabViewController: NSTabViewController {
         awdl.label = NSLocalizedString("AWDL", comment: "AWDL preferences tab")
         awdl.image = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil)
         insertTabViewItem(awdl, at: min(3, tabViewItems.count))
+        let trackpad = NSTabViewItem(viewController: TrackpadPreferencesViewController())
+        trackpad.label = NSLocalizedString("Middle Click", comment: "Preferences tab")
+        trackpad.image = NSImage(systemSymbolName: "hand.draw", accessibilityDescription: nil)
+        insertTabViewItem(trackpad, at: min(4, tabViewItems.count))
+        let about = NSTabViewItem(viewController: CompanionAboutViewController())
+        about.label = NSLocalizedString("About", comment: "Preferences tab")
+        about.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: nil)
+        addTabViewItem(about)
         selectedTabViewItemIndex = 2
     }
     
