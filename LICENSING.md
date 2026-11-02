@@ -1,9 +1,9 @@
 # Licensing and distribution
 
-Reviewed 2026-11-01. This project currently publishes **source only**. A free compiled
-download is being prepared; see [the binary-distribution review](BINARY_DISTRIBUTION.md)
-for the Mac Mouse Fix assessment and the remaining signing requirements. No compiled
-download, paid license, subscription or automatic updater is currently published.
+Reviewed 2026-11-02. This project publishes public source and a **free, noncommercial**
+compiled GitHub prerelease. See [the binary-distribution review](BINARY_DISTRIBUTION.md)
+for the Mac Mouse Fix assessment and artifact-verification requirements. There is no
+paid license, subscription or automatic updater.
 
 ## Can this app be sold?
 

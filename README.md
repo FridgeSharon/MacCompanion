@@ -20,13 +20,13 @@ appears to meet Mac Mouse Fix's separate-work exception. There is no automatic u
 
 ## Download
 
-[Download Mac Companion 0.1.0 beta](https://github.com/FridgeSharon/MacCompanion/releases/download/v0.1.0-beta.20261101.6/MacCompanion-0.1.0-beta-20261101.6-universal.zip)
+[Download Mac Companion 0.1.0 beta](https://github.com/FridgeSharon/MacCompanion/releases/download/v0.1.0-beta.20261102.1/MacCompanion-0.1.0-beta-20261102.1-universal.zip)
 — a free, Developer ID-signed and notarized universal app for macOS 13 or later.
 Xcode is not required. Unzip it, move Mac Companion.app to Applications, and approve
 Accessibility when prompted. Optional AWDL control requires separate helper approval.
 
-See the [prerelease notes and known limitations](https://github.com/FridgeSharon/MacCompanion/releases/tag/v0.1.0-beta.20261101.6)
-and [SHA-256 checksum](https://github.com/FridgeSharon/MacCompanion/releases/download/v0.1.0-beta.20261101.6/MacCompanion-0.1.0-beta-20261101.6-SHA256.txt).
+See the [prerelease notes and known limitations](https://github.com/FridgeSharon/MacCompanion/releases/tag/v0.1.0-beta.20261102.1)
+and [SHA-256 checksum](https://github.com/FridgeSharon/MacCompanion/releases/download/v0.1.0-beta.20261102.1/MacCompanion-0.1.0-beta-20261102.1-SHA256.txt).
 The ZIP includes installation instructions, credits and full license texts.
 
 ## Features

@@ -1,7 +1,9 @@
 # Downloadable application review
 
-Reviewed 2026-11-01 against public source commit
-`08e85accb8295db129bb1faf34e25599f6734271`. No binary release has been published.
+Initial license review: 2026-11-01 against public source commit
+`08e85accb8295db129bb1faf34e25599f6734271`. The first signed, notarized binary
+prerelease was published on 2026-11-01; its verification record appears below.
+The subsequent hardening pass is documented in [QUALITY.md](QUALITY.md).
 
 A **free, noncommercial** GitHub Release containing the compiled `.app` in a ZIP is a
 viable distribution route. Users would unzip it, move it to Applications and approve
