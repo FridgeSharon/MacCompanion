@@ -51,7 +51,7 @@ class ScrollCore {
         _ = refcon
         // Tap 被系统禁用或重启边界时，强制清理 poster 上下文并失效历史异步帧
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            ScrollPoster.shared.stop(.TrackingEnd)
+            ScrollPoster.shared.stop()
             return Unmanaged.passUnretained(event)
         }
         if type != .scrollWheel {
@@ -82,7 +82,9 @@ class ScrollCore {
         // 获取事件目标
         let targetRunningApplication = ScrollUtils.shared.getRunningApplication(from: event)
         // 获取列表中应用程序的列外设置信息
-        ScrollCore.shared.application = ScrollUtils.shared.getTargetApplication(from: targetRunningApplication)
+        let targetApplication = ScrollUtils.shared.getTargetApplication(from: targetRunningApplication)
+        ScrollCore.shared.application = targetApplication
+        let targetScroll = targetApplication.flatMap { $0.inherit ? nil : $0.scroll } ?? Options.shared.scroll
         // 平滑/翻转
         var enableSmooth = false,
             enableSmoothVertical = false,
@@ -92,7 +94,7 @@ class ScrollCore {
         var step = Options.shared.scroll.step,
             speed = Options.shared.scroll.speed,
             duration = Options.shared.scroll.durationTransition
-        if let targetApplication = ScrollCore.shared.application {
+        if let targetApplication {
             enableSmooth = targetApplication.isSmooth(ScrollCore.shared.blockSmooth)
             enableSmoothVertical = targetApplication.isSmoothVertical(ScrollCore.shared.blockSmooth)
             enableSmoothHorizontal = targetApplication.isSmoothHorizontal(ScrollCore.shared.blockSmooth)
@@ -154,36 +156,29 @@ class ScrollCore {
         let needsPassthrough = needVerticalPassthrough || needHorizontalPassthrough
         let shouldSmoothAny = (smoothedY != 0.0) || (smoothedX != 0.0)
 
-        if shouldSmoothAny {
-            ScrollPoster.shared.update(
+        guard shouldSmoothAny,
+              ScrollPoster.shared.handleInput(
                 event: event,
+                targetIsChrome: targetRunningApplication?.bundleIdentifier == "com.google.Chrome",
                 duration: duration,
                 y: smoothedY,
                 x: smoothedX,
                 speed: speed,
-                amplification: ScrollCore.shared.dashAmplification
-            ).tryStart()
-        }
-
-        if needsPassthrough {
-            if shouldSmoothVertical {
-                ScrollEvent.clearY(scrollEvent)
-            }
-            if shouldSmoothHorizontal {
-                ScrollEvent.clearX(scrollEvent)
-            }
+                amplification: ScrollCore.shared.dashAmplification,
+                simTrackpadEnabled: targetScroll.smoothSimTrackpad,
+                deadZone: Options.shared.scroll.deadZone
+              ) else {
             return Unmanaged.passUnretained(event)
         }
 
-        if shouldSmoothAny {
-            if ScrollPoster.shared.isAvailable {
-                return nil
-            } else {
-                return Unmanaged.passUnretained(event)
-            }
-        } else {
-            return Unmanaged.passUnretained(event)
+        guard needsPassthrough else { return nil }
+        if shouldSmoothVertical {
+            ScrollEvent.clearY(scrollEvent)
         }
+        if shouldSmoothHorizontal {
+            ScrollEvent.clearX(scrollEvent)
+        }
+        return Unmanaged.passUnretained(event)
     }
     
     // MARK: - HID++ 滚动热键处理
@@ -372,7 +367,7 @@ class ScrollCore {
                 for: .defaultTap
             )
             scrollEventInterceptor?.onRestart = {
-                ScrollPoster.shared.stop(.TrackingEnd)
+                ScrollPoster.shared.stop()
             }
             hotkeyEventInterceptor = try Interceptor(
                 event: hotkeyEventMask,
@@ -392,6 +387,7 @@ class ScrollCore {
             ScrollPoster.shared.create()
             ScrollPoster.shared.startKeeper()
         } catch {
+            disable()
             print("[ScrollCore] Create Interceptor failure: \(error)")
         }
     }
@@ -400,6 +396,17 @@ class ScrollCore {
         // Guard
         if !isActive {return}
         isActive = false
+        dashKeyHeld = false
+        toggleKeyHeld = false
+        blockKeyHeld = false
+        hidDashHeldCode = nil
+        hidToggleHeldCode = nil
+        hidBlockHeldCode = nil
+        refreshDashState()
+        refreshToggleState()
+        refreshBlockState()
+        application = nil
+        currentApplication = nil
         // 停止滚动事件发送器
         ScrollPoster.shared.stop()
         ScrollPoster.shared.stopKeeper()

@@ -156,8 +156,8 @@ final class TrackpadMiddleController {
                 lastPhysicalClick[key] = ProcessInfo.processInfo.systemUptime
             }
             lock.unlock()
-            guard !CompanionSettings.shared.isExcluded(NSWorkspace.shared.frontmostApplication),
-                  session.begin(device: device, threeFingers: eligible) else { return Unmanaged.passUnretained(event) }
+            guard eligible, !CompanionSettings.shared.isExcluded(NSWorkspace.shared.frontmostApplication),
+                  session.begin(device: device, threeFingers: true) else { return Unmanaged.passUnretained(event) }
             event.type = .otherMouseDown
             watchdog?.invalidate()
             watchdog = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { [weak self] _ in
@@ -181,12 +181,14 @@ final class TrackpadMiddleController {
         lock.lock(); let active = running && allowClick; lock.unlock()
         guard active else { return false }
         let device = MCTrackpadDeviceForEvent(event)
+        guard device != 0 else { return false }
         if session.matches(device) { return true }
-        guard !CompanionSettings.shared.isExcluded(NSWorkspace.shared.frontmostApplication) else { return false }
-        lock.lock(); defer { lock.unlock() }
-        guard let frame = frames[device] else { return false }
-        return device != 0 && frame.count == 3 && frame.touching &&
-            ProcessInfo.processInfo.systemUptime - frame.received < 0.20
+        lock.lock()
+        let frame = frames[device]
+        lock.unlock()
+        guard let frame, frame.count == 3, frame.touching,
+              ProcessInfo.processInfo.systemUptime - frame.received < 0.20 else { return false }
+        return !CompanionSettings.shared.isExcluded(NSWorkspace.shared.frontmostApplication)
     }
 
     private func cancelHeldClick() {

@@ -10,7 +10,11 @@ import os
 
 final class ScrollDispatchContext {
 
-    static let shared = ScrollDispatchContext()
+    static let shared = ScrollDispatchContext(deliver: { snapshot in
+        // Deliver to the captured process so momentum stays with its original
+        // target when the pointer moves, without relying on a tap proxy.
+        snapshot.event.postToPid(snapshot.targetPID)
+    })
 
     struct PostingSnapshot {
         let event: CGEvent
@@ -26,6 +30,7 @@ final class ScrollDispatchContext {
         var updatedAt: CFTimeInterval = 0.0
     }
 
+    private let deliver: (PostingSnapshot) -> Void
     private var state = SnapshotState()
     private var lock = os_unfair_lock_s()
     private let postQueue = DispatchQueue(label: "me.caldis.mos.scrollposter.post", qos: .userInteractive)
@@ -45,29 +50,28 @@ final class ScrollDispatchContext {
     private var updateSnapshotFailures: UInt64 = 0
 #endif
 
+    private init(deliver: @escaping (PostingSnapshot) -> Void) {
+        self.deliver = deliver
+    }
+
 #if DEBUG
-    init() {}
-#else
-    private init() {}
+    convenience init(testDelivery: @escaping (PostingSnapshot) -> Void) {
+        self.init(deliver: testDelivery)
+    }
+
+    func flushForTests() {
+        postQueue.sync {}
+    }
 #endif
 
-    @discardableResult
-    func capture(event: CGEvent) -> Bool {
-        guard let template = event.copy() else {
-#if DEBUG
-            os_unfair_lock_lock(&lock)
-            updateSnapshotFailures &+= 1
-            os_unfair_lock_unlock(&lock)
-#endif
-            return false
-        }
-        let pid = pid_t(event.getIntegerValueField(.eventTargetUnixProcessID))
+    // The caller supplies a private copy so partial native passthrough cannot
+    // mutate the template after it is published to the display-link thread.
+    func capture(template: CGEvent, targetPID: pid_t) {
         os_unfair_lock_lock(&lock)
         state.eventTemplate = template
-        state.targetPID = pid
+        state.targetPID = targetPID
         state.updatedAt = CFAbsoluteTimeGetCurrent()
         os_unfair_lock_unlock(&lock)
-        return true
     }
 
     func advanceGeneration() {
@@ -78,15 +82,6 @@ final class ScrollDispatchContext {
 
     func clearContext() {
         os_unfair_lock_lock(&lock)
-        state.eventTemplate = nil
-        state.targetPID = 0
-        state.updatedAt = 0.0
-        os_unfair_lock_unlock(&lock)
-    }
-
-    func invalidateAll() {
-        os_unfair_lock_lock(&lock)
-        state.generation &+= 1
         state.eventTemplate = nil
         state.targetPID = 0
         state.updatedAt = 0.0
@@ -122,13 +117,7 @@ final class ScrollDispatchContext {
             }
             os_unfair_lock_unlock(&self.lock)
             guard validGeneration && validTTL else { return }
-            // 使用 CGEventPostToPid 直接投递到目标进程:
-            // 1. 不依赖 proxy → 无生命周期崩溃 (issue #868)
-            // 2. 不经过 session event tap 链路重新路由 → 动量阶段光标移动不会
-            //    将滚动事件"带到"其他应用, 始终送达原始滚动目标进程
-            // 3. 进程内通过 event.location 做窗口级 hit-testing, 路由到正确窗口
-            // 合成事件标记 (eventSourceUserData) 作为防御性旁路保留
-            snapshot.event.postToPid(snapshot.targetPID)
+            self.deliver(snapshot)
 #if DEBUG
             os_unfair_lock_lock(&self.lock)
             self.postedFrames &+= 1
@@ -138,6 +127,12 @@ final class ScrollDispatchContext {
     }
 
 #if DEBUG
+    func recordUpdateSnapshotFailure() {
+        os_unfair_lock_lock(&lock)
+        updateSnapshotFailures &+= 1
+        os_unfair_lock_unlock(&lock)
+    }
+
     func recordSkippedSyntheticEvent() {
         os_unfair_lock_lock(&lock)
         skippedSyntheticEvents &+= 1

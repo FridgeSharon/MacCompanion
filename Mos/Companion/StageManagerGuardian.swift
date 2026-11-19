@@ -204,25 +204,27 @@ final class StageManagerGuardian {
             }
         }
         let onScreen = (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]]) ?? []
-        let visiblePIDs = Set(onScreen.compactMap { $0[kCGWindowOwnerPID as String] as? pid_t })
+        let visibleFrames = Self.visibleFramesByProcess(onScreen)
         var blocked = 0
-        for (pid, list) in windows where visiblePIDs.contains(pid) {
+        for (pid, list) in windows {
+            guard let frames = visibleFrames[pid] else { continue }
             if diagnostics {
                 for window in list {
                     diagnosticFrames.append(["rawPID": pid, "rawFrame": Self.frame(window).map(NSStringFromRect) ?? "nil",
                         "role": companionAXValue(window, kAXSubroleAttribute) as? String ?? "nil",
-                        "onScreen": Self.frame(window).map { Self.isOnScreen($0, pid: pid, windowInfo: onScreen) } ?? false,
+                        "onScreen": Self.frame(window).map { original in frames.contains { StageLayout.near(original, $0, tolerance: 5) } } ?? false,
                         "cgFrames": onScreen.filter { $0[kCGWindowOwnerPID as String] as? pid_t == pid }.map { $0[kCGWindowBounds as String] ?? "nil" }])
                 }
             }
             guard let app = NSRunningApplication(processIdentifier: pid),
                   !CompanionSettings.matches(paths: config.excludedPaths, bundlePath: app.bundleURL?.path, executablePath: app.executableURL?.path) else { continue }
             for window in list {
+                if config.windowSizingMode == .direct, DirectWindowController.shared.isManaged(window) { continue }
                 guard companionAXValue(window, kAXSubroleAttribute) as? String == kAXStandardWindowSubrole,
                       companionAXValue(window, kAXMinimizedAttribute) as? Bool != true,
                       companionAXValue(window, "AXFullScreen") as? Bool != true,
                       let original = Self.frame(window),
-                      Self.isOnScreen(original, pid: pid, windowInfo: onScreen) else { continue }
+                      frames.contains(where: { StageLayout.near(original, $0, tolerance: 5) }) else { continue }
                 let appKitFrame = CGRect(x: original.minX, y: primaryTop - original.maxY, width: original.width, height: original.height)
                 guard let screen = screens.max(by: { Self.area($0.frame.intersection(appKitFrame)) < Self.area($1.frame.intersection(appKitFrame)) }),
                       Self.area(screen.frame.intersection(appKitFrame)) >= Self.area(appKitFrame) * 0.9 else { continue }
@@ -230,7 +232,6 @@ final class StageManagerGuardian {
                     diagnosticFrames.append(["pid": pid, "app": app.bundleIdentifier ?? "unknown", "window": NSStringFromRect(appKitFrame),
                         "visible": NSStringFromRect(screen.visibleFrame), "screen": NSStringFromRect(screen.frame)])
                 }
-                if config.windowSizingMode == .direct, DirectWindowController.shared.isManaged(window) { continue }
                 let key = StageWindowRecords.key(pid: pid, hash: CFHash(window))
                 guard let targetAppKit = StageLayout.correction(for: appKitFrame, visibleFrame: screen.visibleFrame,
                     width: CGFloat(config.stageWidth), edge: edge) else {
@@ -247,9 +248,9 @@ final class StageManagerGuardian {
                 guard record.permits(source: original, target: target, now: ProcessInfo.processInfo.systemUptime) else {
                     records.suppressed.insert(key); blocked += 1; continue
                 }
-                records.history[key] = record
                 guard epoch == generation else { return }
                 guard !CGEventSource.buttonState(.combinedSessionState, button: .left) else { continue }
+                records.history[key] = record
                 if Self.setFrame(target, on: window) {
                     corrections += 1
                     worker.asyncAfter(deadline: .now() + 0.2) {
@@ -266,14 +267,18 @@ final class StageManagerGuardian {
     }
 
     private static func area(_ rect: CGRect) -> CGFloat { rect.isNull ? 0 : rect.width * rect.height }
-    private static func isOnScreen(_ frame: CGRect, pid: pid_t, windowInfo: [[String: Any]]) -> Bool {
-        windowInfo.contains { info in
-            guard info[kCGWindowOwnerPID as String] as? pid_t == pid,
+    /// Decode the WindowServer snapshot once per pass. Only layer-zero frames
+    /// can match an adjustable application window.
+    static func visibleFramesByProcess(_ snapshot: [[String: Any]]) -> [pid_t: [CGRect]] {
+        var frames: [pid_t: [CGRect]] = [:]
+        for info in snapshot {
+            guard let pid = info[kCGWindowOwnerPID as String] as? pid_t,
                   info[kCGWindowLayer as String] as? Int == 0,
                   let bounds = info[kCGWindowBounds as String] as? NSDictionary,
-                  let rect = CGRect(dictionaryRepresentation: bounds) else { return false }
-            return StageLayout.near(frame, rect, tolerance: 5)
+                  let frame = CGRect(dictionaryRepresentation: bounds) else { continue }
+            frames[pid, default: []].append(frame)
         }
+        return frames
     }
     static func frame(_ window: AXUIElement) -> CGRect? {
         guard let position = companionAXValue(window, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
