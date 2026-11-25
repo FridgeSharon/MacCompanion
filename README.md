@@ -92,3 +92,7 @@ Integration, independent trackpad middle-click and original additions: **Guy Sha
 [Middle by Ryan Hanson](https://github.com/rxhanson/Middle-Community) is a behavior reference;
 no code or assets were copied. See [CREDITS.md](CREDITS.md) for contribution details.
 No upstream endorsement is implied.
+
+## Project recovery
+
+[Maintainer recovery guide](LOCAL-PROJECT-RECOVERY.md)
