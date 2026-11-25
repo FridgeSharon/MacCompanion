@@ -17,6 +17,8 @@ replacement of the restricted code/assets. This repository makes no commercial-l
 grant for third-party material. Monetization through a different payment label is not
 treated as a workaround.
 
+The [source provenance audit](PROVENANCE.md) identifies inherited files, other component rights and the work required for an independent implementation.
+
 ## Public source versus open source
 
 The source is public and may be inspected, built and modified within its licenses.

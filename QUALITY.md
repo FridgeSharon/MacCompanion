@@ -1,3 +1,38 @@
+# Maintenance and performance review — 2026-11-19
+
+Reviewed the public source at `25bdead` on macOS 27.2.1, Apple Silicon.
+The findings below distinguish measurements of the installed private build from
+tests of the local maintenance candidate.
+
+| Finding | Change and evidence |
+| --- | --- |
+| Scroll input could be swallowed when the display link or event route was unavailable. A change of target could carry buffered movement into another app. | Preserve native passthrough on failure and finish the old target's sequence before accepting the new target. An isolated event sink verifies both recipients, phases and deltas. |
+| A display-link callback could stop the link it was running on. | Schedule completion on the main run loop, check the input sequence before stopping, and clean up partially installed event taps. The simulator exercises the phase transitions without posting to desktop apps. |
+| Waking the Mac and activating the user session independently restarted input handlers. | Resume once both conditions hold. The regression suite covers both notification orders and duplicate notifications. |
+| Stage Manager repeatedly decoded the same WindowServer snapshot and queried directly managed windows. | Index layer-zero frames by process once per pass and skip managed windows before Accessibility queries. In an optimized synthetic fixture of 12 processes and 120 windows, 40 passes returned the same 4,800 matches. Two runs took 25–31 ms before and 1.8–2.3 ms after. These timings cover only frame lookup. |
+| Ordinary clicks could query the foreground app and exclusions before middle-click eligibility was known. | Check the device and recent three-finger state first. Held clicks still follow their source device through release. |
+| The source audit could pass with a missing bundled license. | Share the release verifier's six-file mapping, require every copy, and compare bytes. All 12 missing-file or altered-file fixtures were rejected. The audit now skips build and Git directories before traversing them. |
+
+**Candidate verification.** All 154 signed tests passed normally and under Thread
+Sanitizer. The unsigned optimized app and helper both compiled for arm64 and x86_64.
+Clang static analysis passed for the helper and both native input bridges.
+
+**Installed app sample.** Over 60.06 seconds of ordinary background operation with
+private build `20261101.7`, the app consumed 0.48 seconds of CPU (0.80% of one
+core). RSS ranged from 107,136 to 107,152 KiB. The AWDL helper used 0.01 seconds
+of CPU and 7,472–7,504 KiB RSS. A separate heap scan reported two leaked
+allocations totaling 368 bytes rooted in an XPC rich-error object. Attribution
+to a specific caller and long-term growth remain unverified. The original app
+was reopened after the signed tests.
+
+**Remaining coverage.** The signed suite runs with startup input handlers disabled.
+Fresh physical wheel/trackpad handoff, display reconnect, Intel execution and a
+long-duration soak of this candidate remain outstanding. In particular, synthetic
+pixel-scroll events still carry legacy delta fields from their template; consumers
+that read multiple delta representations need real-app compatibility testing.
+
+[Source provenance and licensing assessment](PROVENANCE.md)
+
 # Code quality review — 2026-11-01
 
 This pass hardens the existing application. It adds no user-facing features and does

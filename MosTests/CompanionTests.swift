@@ -766,25 +766,48 @@ private final class PopoverContentProbe: NSView {
 
 final class QualityRegressionTests: XCTestCase {
     func testAutomaticAWDLRestoresWhileAsleepOrInAnotherUserSession() {
-        var session = AWDLSessionState()
-        XCTAssertTrue(session.allowsAutomaticSuppression)
+        var session = CompanionSessionState()
+        XCTAssertTrue(session.isInteractive)
         session.receive(NSWorkspace.willSleepNotification)
-        XCTAssertFalse(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.allowsAutomaticSuppression))
+        XCTAssertFalse(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.isInteractive))
         session.receive(NSWorkspace.sessionDidResignActiveNotification)
         session.receive(NSWorkspace.didWakeNotification)
-        XCTAssertFalse(session.allowsAutomaticSuppression)
+        XCTAssertFalse(session.isInteractive)
         session.receive(NSWorkspace.sessionDidBecomeActiveNotification)
-        XCTAssertTrue(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.allowsAutomaticSuppression))
+        XCTAssertTrue(AWDLMode.game.suppress(onWiFi: true, gameActive: true, sessionActive: session.isInteractive))
         XCTAssertFalse(AWDLMode.on.suppress(onWiFi: true, gameActive: true, sessionActive: false))
         XCTAssertTrue(AWDLMode.off.suppress(onWiFi: false, gameActive: false, sessionActive: false))
     }
+    func testWindowSnapshotKeepsOnlyNormalFramesForEachProcess() {
+        let first = CGRect(x: 3, y: 4, width: 180, height: 200)
+        let second = CGRect(x: -200, y: 10, width: 90, height: 80)
+        func row(_ pid: pid_t, _ layer: Int, _ frame: CGRect) -> [String: Any] {
+            [kCGWindowOwnerPID as String: pid, kCGWindowLayer as String: layer,
+             kCGWindowBounds as String: frame.dictionaryRepresentation]
+        }
+        let frames = StageManagerGuardian.visibleFramesByProcess([
+            row(1, 0, first), row(2, 0, first), row(1, 0, second),
+            row(3, 9, second), [kCGWindowOwnerPID as String: 4, kCGWindowLayer as String: 0]
+        ])
+        XCTAssertEqual(frames, [1: [first, second], 2: [first]])
+    }
+    func testInputLifecycleOnlyTransitionsOnceAcrossOverlappingNotifications() {
+        var state = CompanionSessionState()
+        XCTAssertTrue(state.receive(NSWorkspace.sessionDidResignActiveNotification))
+        XCTAssertFalse(state.receive(NSWorkspace.willSleepNotification))
+        XCTAssertFalse(state.receive(NSWorkspace.didWakeNotification))
+        XCTAssertFalse(state.isInteractive)
+        XCTAssertTrue(state.receive(NSWorkspace.sessionDidBecomeActiveNotification))
+        XCTAssertFalse(state.receive(NSWorkspace.sessionDidBecomeActiveNotification))
+        XCTAssertTrue(state.isInteractive)
+    }
     func testSessionActivationCannotResumeAutomaticAWDLBeforeWake() {
-        var session = AWDLSessionState()
+        var session = CompanionSessionState()
         session.receive(NSWorkspace.willSleepNotification)
         session.receive(NSWorkspace.sessionDidBecomeActiveNotification)
-        XCTAssertFalse(session.allowsAutomaticSuppression)
+        XCTAssertFalse(session.isInteractive)
         session.receive(NSWorkspace.didWakeNotification)
-        XCTAssertTrue(session.allowsAutomaticSuppression)
+        XCTAssertTrue(session.isInteractive)
     }
     func testExplicitSettingsStoreRoundTripsWithoutWritingStandardDefaults() {
         let suite = "com.github.FridgeSharon.MacCompanion.qualityTests.\(UUID().uuidString)"

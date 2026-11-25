@@ -34,6 +34,63 @@ final class ScrollPosterStateTests: XCTestCase {
         XCTAssertFalse(sut.isRunning, "Display recovery must stay idle until there is scroll input")
     }
 
+    func testUnroutableInputRemainsAvailableForNativeScrolling() throws {
+        let event = try XCTUnwrap(CGEvent(
+            scrollWheelEvent2Source: nil, units: .line, wheelCount: 2,
+            wheel1: 3, wheel2: 4, wheel3: 0
+        ))
+        for invalidPID in [Int64(0), 1, Int64.max] {
+            event.setIntegerValueField(.eventTargetUnixProcessID, value: invalidPID)
+            let scroll = ScrollEvent(with: event)
+            ScrollEvent.normalizeY(scroll, 100)
+            XCTAssertEqual(scroll.Y.usableValue, 100)
+            XCTAssertFalse(sut.handleInput(
+                event: event, targetIsChrome: false, duration: 0.1, y: scroll.Y.usableValue, x: 0,
+                speed: 1, simTrackpadEnabled: true, deadZone: 0.1
+            ))
+            XCTAssertEqual(event.getIntegerValueField(.scrollWheelEventDeltaAxis1), 3)
+            XCTAssertEqual(event.getIntegerValueField(.scrollWheelEventDeltaAxis2), 4)
+            XCTAssertFalse(sut.isAvailable)
+            XCTAssertFalse(sut.isRunning)
+        }
+    }
+
+    func testChangingTargetEndsOldSequenceAndStartsWithoutItsResidual() throws {
+        let oldPID: pid_t = 100
+        let newPID: pid_t = 200
+        var delivered: [ScrollDispatchContext.PostingSnapshot] = []
+        let context = ScrollDispatchContext(testDelivery: { delivered.append($0) })
+        let poster = ScrollPoster(testDispatchContext: context)
+
+        func submit(pid: pid_t, delta: Double) throws {
+            let event = try XCTUnwrap(CGEvent(
+                scrollWheelEvent2Source: nil, units: .line, wheelCount: 1,
+                wheel1: 1, wheel2: 0, wheel3: 0
+            ))
+            event.setIntegerValueField(.eventTargetUnixProcessID, value: Int64(pid))
+            XCTAssertTrue(poster.handleInput(
+                event: event, targetIsChrome: false, duration: 0.5, y: delta, x: 0,
+                speed: 1, simTrackpadEnabled: true, deadZone: 0.1
+            ))
+        }
+
+        try submit(pid: oldPID, delta: 100)
+        poster.processFrameForTests()
+        poster.processFrameForTests()
+        context.flushForTests()
+        XCTAssertGreaterThan(delivered.last?.event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1) ?? 0, 10)
+        delivered.removeAll()
+
+        try submit(pid: newPID, delta: 20)
+        poster.processFrameForTests()
+        poster.processFrameForTests()
+        context.flushForTests()
+
+        XCTAssertEqual(delivered.map(\.targetPID), [oldPID, newPID, newPID])
+        XCTAssertEqual(delivered.map { $0.event.getDoubleValueField(.scrollWheelEventScrollPhase) }, [4, 1, 2])
+        XCTAssertEqual(delivered.map { $0.event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1) }, [0, 0, 2])
+    }
+
     // MARK: - shift: shifting = false (默认)
 
     func testShift_whenNotShifting_passThrough() {

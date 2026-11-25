@@ -43,6 +43,7 @@ enum AppRuntime {
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var session = CompanionSessionState()
     // 防抖定时器: 显示器参数变化通知
     private var screenChangeTimer: Timer?
     // 权限恢复轮询定时器
@@ -76,32 +77,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // The private utility starts quietly, including when launched at login.
         // Preferences remain available from the menu bar or an explicit app reopen.
 
-        // 监听用户切换, 在切换用户 session 时停止运行
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(AppDelegate.sessionDidActive),
-            name: NSWorkspace.sessionDidBecomeActiveNotification,
-            object: nil
-        )
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(AppDelegate.sessionDidResign),
-            name: NSWorkspace.sessionDidResignActiveNotification,
-            object: nil
-        )
-        // 监听系统休眠/唤醒, 复用 session 生命周期方法
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(AppDelegate.sessionDidResign),
-            name: NSWorkspace.willSleepNotification,
-            object: nil
-        )
-        NSWorkspace.shared.notificationCenter.addObserver(
-            self,
-            selector: #selector(AppDelegate.sessionDidActive),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
+        for name in [NSWorkspace.sessionDidBecomeActiveNotification, NSWorkspace.sessionDidResignActiveNotification,
+                     NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification] {
+            NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(sessionChanged(_:)),
+                                                              name: name, object: nil)
+        }
         // 监听显示器参数变化 (热插拔/分辨率/显示器休眠唤醒), 延迟重建 CVDisplayLink
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -142,12 +122,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 关闭前停止滚动处理
     func applicationWillTerminate(_ aNotification: Notification) {
         guard AppRuntime.shouldRunAppStartupSideEffects else { return }
-        DirectWindowController.shared.stop()
-        StageManagerGuardian.shared.stop()
+        stopInputServices()
         AWDLController.shared.stop()
-        ScrollCore.shared.disable()
-        ThumbButtonMonitor.shared.disable()
-        TrackpadMiddleController.shared.stop()
         // 写入尚未 flush 的脏配置组
         Options.shared.flushPendingSaves()
     }
@@ -155,75 +131,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 检查是否有访问 accessibility 权限, 如果有则启动滚动处理, 并结束计时器
     // 10.14(Mojave) 后, 若无该权限会直接在创建 eventTap 时报错 (https://developer.apple.com/videos/play/wwdc2018/702/)
     @objc func startWithAccessibilityPermissionsChecker(_ timer: Timer?) {
-        if let validTimer = timer {
-            // 开启辅助权限后, 关闭定时器, 开始处理
-            if Utils.isHadAccessibilityPermissions() {
-                validTimer.invalidate()
-                permissionRecoveryTimer = nil
-                NSLog("First Initialization (Accessibility Authorization Needed)")
-                ScrollCore.shared.enable()
-                ThumbButtonMonitor.shared.enable()
-                DirectWindowController.shared.start()
-                StageManagerGuardian.shared.start()
-                TrackpadMiddleController.shared.start()
+        guard session.isInteractive else { return }
+        guard Utils.isHadAccessibilityPermissions() else {
+            if timer == nil {
+                showPermissionGuidance(retryInterval: 10)
             }
-        } else {
-            if Utils.isHadAccessibilityPermissions() {
-                NSLog("Regular Initialization")
-                ScrollCore.shared.enable()
-                ThumbButtonMonitor.shared.enable()
-                DirectWindowController.shared.start()
-                StageManagerGuardian.shared.start()
-                TrackpadMiddleController.shared.start()
-            } else {
-                // 如果应用不在辅助权限列表内, 则弹出欢迎窗口
-                WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.introductionWindowController, withTitle: "")
-                // 启动定时器检测权限, 当拥有授权时启动滚动处理
-                // 统一由 permissionRecoveryTimer 持有, 使 sessionDidResign 可取消, 避免反复休眠/切换用户时叠加
-                permissionRecoveryTimer?.invalidate()
-                permissionRecoveryTimer = Timer.scheduledTimer(
-                    timeInterval: 10.0,
-                    target: self,
-                    selector: #selector(startWithAccessibilityPermissionsChecker(_:)),
-                    userInfo: nil,
-                    repeats: true
-                )
-            }
+            return
         }
-    }
-    
-    // 在切换用户时停止滚动处理
-    @objc func sessionDidActive(notification: NSNotification){
-        startWithAccessibilityPermissionsChecker(nil)
-    }
-    @objc func sessionDidResign(notification: NSNotification){
-        DirectWindowController.shared.stop()
-        StageManagerGuardian.shared.stop()
         permissionRecoveryTimer?.invalidate()
         permissionRecoveryTimer = nil
+        ScrollCore.shared.enable()
+        ThumbButtonMonitor.shared.enable()
+        DirectWindowController.shared.start()
+        StageManagerGuardian.shared.start()
+        TrackpadMiddleController.shared.start()
+    }
+
+    @objc private func sessionChanged(_ note: Notification) {
+        guard session.receive(note.name) else { return }
+        if session.isInteractive { startWithAccessibilityPermissionsChecker(nil) }
+        else { stopInputServices() }
+    }
+
+    private func stopInputServices() {
+        permissionRecoveryTimer?.invalidate()
+        permissionRecoveryTimer = nil
+        DirectWindowController.shared.stop()
+        StageManagerGuardian.shared.stop()
         ScrollCore.shared.disable()
         ThumbButtonMonitor.shared.disable()
         TrackpadMiddleController.shared.stop()
     }
-    // 辅助功能权限在运行时被撤销 (可能由多个 Interceptor 同时触发, 此方法必须幂等)
+
     @objc func handleAccessibilityPermissionLost() {
-        DirectWindowController.shared.stop()
-        StageManagerGuardian.shared.stop()
-        // 避免多个 Interceptor 同时触发导致重复处理
-        guard ScrollCore.shared.isActive || ThumbButtonMonitor.shared.isActive else { return }
-        NSLog("Accessibility permission lost at runtime, disabling cores")
-        ScrollCore.shared.disable()
-        ThumbButtonMonitor.shared.disable()
-        TrackpadMiddleController.shared.stop()
+        guard session.isInteractive, permissionRecoveryTimer == nil else { return }
+        stopInputServices()
+        showPermissionGuidance(retryInterval: 2)
+    }
+
+    private func showPermissionGuidance(retryInterval: TimeInterval) {
+        guard permissionRecoveryTimer == nil else { return }
+        permissionRecoveryTimer = Timer.scheduledTimer(timeInterval: retryInterval, target: self,
+            selector: #selector(startWithAccessibilityPermissionsChecker(_:)), userInfo: nil, repeats: true)
         WindowManager.shared.showWindow(withIdentifier: WINDOW_IDENTIFIER.introductionWindowController, withTitle: "")
-        // 启动定时器检测权限恢复
-        permissionRecoveryTimer?.invalidate()
-        permissionRecoveryTimer = Timer.scheduledTimer(
-            timeInterval: 2.0,
-            target: self,
-            selector: #selector(startWithAccessibilityPermissionsChecker(_:)),
-            userInfo: nil,
-            repeats: true
-        )
     }
 }

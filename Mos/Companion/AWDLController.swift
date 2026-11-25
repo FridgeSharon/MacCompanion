@@ -16,23 +16,6 @@ enum AWDLMode: Int, CaseIterable {
     }
 }
 
-/// Waking a display does not necessarily reactivate this user's session.
-struct AWDLSessionState {
-    private var awake = true
-    private var active = true
-    var allowsAutomaticSuppression: Bool { awake && active }
-
-    mutating func receive(_ name: Notification.Name) {
-        switch name {
-        case NSWorkspace.willSleepNotification: awake = false
-        case NSWorkspace.didWakeNotification: awake = true
-        case NSWorkspace.sessionDidResignActiveNotification: active = false
-        case NSWorkspace.sessionDidBecomeActiveNotification: active = true
-        default: break
-        }
-    }
-}
-
 @objc(CompanionAWDLProtocol) protocol CompanionAWDLProtocol {
     @objc(setSuppressed:withReply:) func setSuppressed(_ suppressed: Bool, withReply reply: @escaping (Bool, Int32) -> Void)
 }
@@ -51,7 +34,7 @@ final class AWDLController {
     private var onWiFi = false
     private var requestPending = false
     private var stopped = true
-    private var session = AWDLSessionState()
+    private var session = CompanionSessionState()
     private var requestID: UInt64 = 0
     private(set) var interfaceUp: Bool?
     private(set) var status = NSLocalizedString("AWDL control is off", comment: "") {
@@ -149,7 +132,7 @@ final class AWDLController {
         let active = NSWorkspace.shared.frontmostApplication
         let game = active?.bundleURL.flatMap { Bundle(url: $0)?.infoDictionary }.map(AWDLMode.isGame) ?? false
         desiredSuppression = mode.suppress(onWiFi: onWiFi, gameActive: game,
-            sessionActive: session.allowsAutomaticSuppression)
+            sessionActive: session.isInteractive)
         if connection == nil {
             let client = NSXPCConnection(machServiceName: Self.serviceName, options: .privileged)
             client.remoteObjectInterface = NSXPCInterface(with: CompanionAWDLProtocol.self)

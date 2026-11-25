@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Publication gate for this source snapshot; reports paths, never secret values."""
+import os
 import re
 import sys
 from pathlib import Path
+
+from verify_release import LICENSES
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIP = {'.git', '.build', '__pycache__'}
@@ -18,15 +21,23 @@ PATTERNS = [r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
             r'DEVELOPMENT_TEAM\s*=\s*[A-Z0-9]{10}\s*;',
             r'IOHIDManagerCreate\s*\(']
 
+def source_files():
+    for directory, subdirectories, files in os.walk(ROOT):
+        subdirectories[:] = [name for name in subdirectories if name not in SKIP]
+        for name in files:
+            path = Path(directory) / name
+            if name not in SKIP and path.is_file():
+                yield path
+
+
 def audit():
     errors, count, total = [], 0, 0
     for name in REQUIRED:
         if not (ROOT/name).is_file(): errors.append('Missing notice: '+name)
     for name in EXCLUDED:
         if (ROOT/name).exists(): errors.append('Excluded backend restored: '+name)
-    for path in ROOT.rglob('*'):
+    for path in source_files():
         relative = path.relative_to(ROOT)
-        if any(part in SKIP for part in relative.parts) or not path.is_file(): continue
         count += 1
         total += path.stat().st_size
         if any(part in {'.local-state', 'xcuserdata'} for part in relative.parts):
@@ -41,13 +52,13 @@ def audit():
         except UnicodeDecodeError: continue
         for pattern in PATTERNS:
             if re.search(pattern,text): errors.append('Review matched content: '+str(relative))
-    # The original MIT/custom notices must stay identical in source and license directory.
-    for left,right in [('MacMouseFix.txt','MacMouseFix-LICENSE.txt'),
-                       ('Rectangle-MIT.txt','Rectangle-LICENSE.txt'),
-                       ('AWDLControl-MIT.txt','AWDLControl-LICENSE.txt')]:
-        a,b=ROOT/'LICENSES'/left,ROOT/'Mos/Companion'/right
-        if a.exists() and b.exists() and a.read_text().strip()!=b.read_text().strip():
-            errors.append('Notice mismatch: '+right)
+    for original, bundled in LICENSES.items():
+        source = ROOT / 'LICENSES' / original
+        runtime = ROOT / 'Mos' / 'Companion' / bundled
+        if not runtime.is_file():
+            errors.append('Missing bundled notice: ' + bundled)
+        elif source.is_file() and source.read_bytes() != runtime.read_bytes():
+            errors.append('Notice mismatch: ' + bundled)
     print(f'Checked {count} source/resource files ({total} bytes).')
     for error in errors: print(error, file=sys.stderr)
     if errors: return 1
